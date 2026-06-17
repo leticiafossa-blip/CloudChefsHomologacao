@@ -1,5 +1,4 @@
 <?php
-// ---- BLOCO DE CORREÇÃO CORS ----
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: Content-Type, Cache-Control");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
@@ -11,109 +10,95 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require 'connect.php';
+require 'pix_funcoes.php';
 
 $data = json_decode(file_get_contents("php://input"), true);
 
 if (!$data) {
-    echo json_encode(["success" => false, "error" => "Nenhum dado recebido."]);
+    echo json_encode(["success" => false, "error" => "Nenhum dado recebido."], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
-$nome_cliente = $data['nome_cliente'] ?? 'Consumidor';
+$nome_cliente = trim($data['nome_cliente'] ?? 'Consumidor');
 $produtos = $data['produtos'] ?? [];
-$total = $data['total'] ?? 0;
-$status = "Pendente";
-$forma_pagamento = $data['forma_pagamento'] ?? '';
+$total = (float) ($data['total'] ?? 0);
+$forma_pagamento = trim($data['forma_pagamento'] ?? '');
+
+if (empty($produtos)) {
+    echo json_encode(["success" => false, "error" => "O pedido precisa ter pelo menos um produto."], JSON_UNESCAPED_UNICODE);
+    exit();
+}
+
+if ($total <= 0) {
+    echo json_encode(["success" => false, "error" => "Total inválido."], JSON_UNESCAPED_UNICODE);
+    exit();
+}
 
 try {
+    $ehPix = strtoupper($forma_pagamento) === 'PIX';
+
+    // Para PIX, o pedido fica aguardando pagamento e só entra na produção depois de aprovado.
+    $status = $ehPix ? "Aguardando PIX" : "Pendente";
+    $status_pagamento = $ehPix ? "pendente" : "aprovado";
+  
+
     $db->beginTransaction();
 
-    // 1. INSERIR PEDIDO PRINCIPAL
     $stmt = $db->prepare("
-        INSERT INTO pedido (nome_cliente, data_pedido, valor_total, status, forma_pagamento)
-        VALUES (:nome_cliente, NOW(), :valor_total, :status, :forma_pagamento)
+        INSERT INTO pedido
+            (nome_cliente, data_pedido, valor_total, status, forma_pagamento, status_pagamento, estoque_baixado)
+        VALUES
+            (:nome_cliente, NOW(), :valor_total, :status, :forma_pagamento, :status_pagamento, FALSE)
         RETURNING id_pedido
     ");
+
     $stmt->execute([
-        ':nome_cliente' => $nome_cliente,
+        ':nome_cliente' => $nome_cliente ?: 'Consumidor',
         ':valor_total' => $total,
         ':status' => $status,
-        ':forma_pagamento' => $forma_pagamento
+        ':forma_pagamento' => $forma_pagamento,
+        ':status_pagamento' => $status_pagamento
     ]);
+
     $id_pedido = $stmt->fetchColumn();
 
-    // 2. PREPARAR STATEMENTS PARA O LOOP (Ganha performance)
-    // Inserir item
     $stmtItem = $db->prepare("
         INSERT INTO itens_pedido (id_pedido_fk, nome_produto, valor_unitario, quantidade)
         VALUES (:id_pedido, :nome_produto, :valor_unitario, :quantidade)
     ");
 
-    // Buscar a receita (composição) do produto no banco
-    $stmtReceita = $db->prepare("
-        SELECT id_item_estoque, quantidade_necessaria 
-        FROM composicao_produto 
-        WHERE id_produto = (SELECT id_produto FROM produto WHERE nome = :nome_prod LIMIT 1)
-    ");
-
-    // Deduzir do estoque (pelo ID do item para ser mais preciso)
-    $stmtEstoque = $db->prepare("
-        UPDATE estoque 
-        SET quantidade_atual = quantidade_atual - :qtd_deduzir 
-        WHERE id_item = :id_item 
-        AND quantidade_atual >= :qtd_deduzir
-    ");
-
-    // 3. PROCESSAR CADA PRODUTO DO CARRINHO
     foreach ($produtos as $p) {
-        $nome_produto = $p['nome'];
-        $quantidade_pedido = $p['quantidade'];
-
-        // A. Salva na itens_pedido
         $stmtItem->execute([
             ':id_pedido' => $id_pedido,
-            ':nome_produto' => $nome_produto,
+            ':nome_produto' => $p['nome'],
             ':valor_unitario' => $p['preco'],
-            ':quantidade' => $quantidade_pedido
+            ':quantidade' => $p['quantidade']
         ]);
+    }
 
-        // B. BUSCA A RECEITA DINÂMICA (Não usa mais o array fixo!)
-        $stmtReceita->execute([':nome_prod' => $nome_produto]);
-        $ingredientes = $stmtReceita->fetchAll(PDO::FETCH_ASSOC);
-
-        // C. Se o produto tiver uma receita cadastrada, deduz o estoque
-        if ($ingredientes) {
-            foreach ($ingredientes as $ing) {
-                $qtd_total_deduzir = $ing['quantidade_necessaria'] * $quantidade_pedido;
-                
-                $stmtEstoque->execute([
-                    ':qtd_deduzir' => $qtd_total_deduzir,
-                    ':id_item' => $ing['id_item_estoque']
-                ]);
-
-                // Verifica se tinha estoque suficiente
-                if ($stmtEstoque->rowCount() === 0) {
-                    throw new Exception("Estoque insuficiente para um dos ingredientes do produto: $nome_produto");
-                }
-            }
-        }
-        // Se não tiver receita cadastrada (ex: uma bala ou item avulso), 
-        // ele apenas segue sem deduzir nada, conforme você pediu.
+    // Para Dinheiro/Débito/Crédito, mantém o comportamento antigo: baixa estoque na hora.
+    // Para PIX, baixa apenas quando o pagamento for aprovado.
+    if (!$ehPix) {
+        baixar_estoque_do_pedido($db, $id_pedido);
     }
 
     $db->commit();
 
     echo json_encode([
         "success" => true,
-        "message" => "Pedido realizado! O estoque foi reduzido com base nas receitas do banco.",
-        "id_pedido" => $id_pedido
-    ]);
-
+        "message" => $ehPix
+            ? "Pedido criado. Agora gere o QR Code Pix para pagamento."
+            : "Pedido realizado! O estoque foi reduzido com base nas receitas do banco.",
+        "id_pedido" => $id_pedido,
+        "pix" => $ehPix
+    ], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
-    $db->rollBack();
+    if ($db->inTransaction()) {
+        $db->rollBack();
+    }
+
     echo json_encode([
         "success" => false,
         "error" => $e->getMessage()
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
 }
-?>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuração Mercado Pago - Cloud Chefs</title>
+    <link rel="stylesheet" href="css/financeiro.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        body {
+            background: #f5f5f5;
+            font-family: Arial, sans-serif;
+        }
+
+        .topo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 15px;
+            background: #222;
+            color: white;
+            position: relative;
+        }
+
+        .btn-voltar-topo {
+            position: absolute;
+            left: 20px;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .logo-topo {
+            height: 55px;
+        }
+
+        .container-config {
+            max-width: 850px;
+            margin: 30px auto;
+            background: white;
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+        }
+
+        .aviso {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .status-config {
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .status-ok {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-pendente {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        label {
+            font-weight: bold;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+
+        small {
+            color: #666;
+            display: block;
+            margin-top: 5px;
+            line-height: 1.35;
+        }
+
+        .botoes {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 22px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 12px 18px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+        }
+
+        .btn-salvar {
+            background: #28a745;
+        }
+
+        .btn-testar {
+            background: #222;
+        }
+
+        .btn-limpar {
+            background: #777;
+        }
+
+        .resultado {
+            margin-top: 18px;
+            padding: 14px;
+            border-radius: 10px;
+            background: #f1f1f1;
+            white-space: pre-wrap;
+            font-size: 14px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header class="topo">
+        <a href="monitoramento.html" class="btn-voltar-topo">← Voltar</a>
+        <img src="img/logo.png" alt="Logo Cloud Chefs" class="logo-topo">
+        <h1>Mercado Pago</h1>
+    </header>
+
+    <main class="container-config">
+        <div class="aviso">
+            <strong>Importante:</strong> essa tela é apenas para gerente. O Access Token fica salvo no banco e não aparece no JavaScript.
+            Use credenciais de teste enquanto estiver desenvolvendo e troque para produção quando for receber dinheiro real.
+        </div>
+
+        <div id="status-config" class="status-config status-pendente">
+            Verificando configuração...
+        </div>
+
+        <form id="form-mercado-pago" class="form-grid">
+            <div>
+                <label for="ambiente">Ambiente</label>
+                <select id="ambiente">
+                    <option value="teste">Teste</option>
+                    <option value="producao">Produção</option>
+                </select>
+                <small>Use teste para desenvolvimento. Use produção somente quando a conta Mercado Pago estiver pronta para receber Pix real.</small>
+            </div>
+
+            <div>
+                <label for="public-key">Public Key</label>
+                <input type="text" id="public-key" placeholder="Ex: APP_USR-... ou TEST-...">
+                <small>É a chave pública da sua aplicação. Para Pix simples, ela não é tão usada quanto o Access Token, mas é bom salvar.</small>
+            </div>
+
+            <div>
+                <label for="access-token">Access Token</label>
+                <textarea id="access-token" placeholder="Cole aqui o Access Token. Se já tiver salvo, deixe em branco para manter o atual."></textarea>
+                <small id="token-atual">Nenhum token salvo ainda.</small>
+            </div>
+
+            <div>
+                <label for="webhook-url">Webhook URL</label>
+                <input type="text" id="webhook-url" placeholder="https://seudominio.com/Cloudchefs2026/cloudchefs/backend/webhook_mercado_pago.php">
+                <small>
+                    Opcional no começo. Para testar localmente, você pode deixar vazio e usar a consulta automática da tela do Pix.
+                    Para produção, use uma URL pública, de preferência HTTPS.
+                </small>
+            </div>
+
+            <div>
+                <label for="webhook-secret">Webhook Secret</label>
+                <textarea id="webhook-secret" placeholder="Cole aqui a assinatura secreta do webhook. Se já tiver salvo, deixe em branco para manter a atual."></textarea>
+                <small id="secret-atual">Opcional, mas recomendado em produção.</small>
+            </div>
+
+            <div class="botoes">
+                <button type="submit" class="btn btn-salvar"><i class="fas fa-save"></i> Salvar configuração</button>
+                <button type="button" class="btn btn-testar" onclick="testarConexaoMercadoPago()"><i class="fas fa-plug"></i> Testar conexão</button>
+                <button type="button" class="btn btn-limpar" onclick="limparCamposSensiveis()"><i class="fas fa-eraser"></i> Limpar campos sensíveis</button>
+            </div>
+        </form>
+
+        <div id="resultado" class="resultado"></div>
+    </main>
+
+    <div id="global-message-container"></div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/mercado_pago_config.js"></script>
+</body>
+</html>

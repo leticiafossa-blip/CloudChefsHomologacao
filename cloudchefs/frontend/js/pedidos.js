@@ -1,12 +1,15 @@
 // --- CONFIGURAÇÃO ---
-const IP_VM = "3.144.118.111"; // Seu IP atualizado
-const API_PRODUTOS = `http://${IP_VM}/Cloudchefs2026/cloudchefs/backend/produtos.php`;
-const API_SALVAR_PEDIDO = `http://${IP_VM}/Cloudchefs2026/cloudchefs/backend/salvar_pedido.php`;
+const BASE_BACKEND = "../backend";
+const API_PRODUTOS = `${BASE_BACKEND}/produtos.php`;
+const API_SALVAR_PEDIDO = `${BASE_BACKEND}/salvar_pedido.php`;
+const API_CRIAR_PIX = `${BASE_BACKEND}/criar_pix.php`;
+const API_CONSULTAR_PIX = `${BASE_BACKEND}/consultar_pagamento_pix.php`;
 
-let PRODUTOS_BANCO = []; // Onde guardaremos os lanches vindos da AWS
-let carrinho = {}; // Formato: { id_produto: quantidade }
+let PRODUTOS_BANCO = [];
+let carrinho = {};
 let total = 0;
 let formaPagamento = null;
+let intervaloPix = null;
 
 // --- INICIALIZAÇÃO ---
 document.addEventListener("DOMContentLoaded", () => {
@@ -18,7 +21,7 @@ async function carregarCardapio() {
     try {
         const res = await fetch(API_PRODUTOS);
         PRODUTOS_BANCO = await res.json();
-        
+
         console.log("✅ Cardápio carregado:", PRODUTOS_BANCO);
         renderizarCardapio();
     } catch (err) {
@@ -27,7 +30,7 @@ async function carregarCardapio() {
     }
 }
 
-// --- DESENHA OS PRODUTOS NA TELA COM O LAYOUT CORRETO ---
+// --- DESENHA OS PRODUTOS NA TELA ---
 function renderizarCardapio() {
     const containerLanches = document.getElementById('produtos-lanches');
     const containerAcompanhamentos = document.getElementById('produtos-acompanhamentos');
@@ -35,18 +38,14 @@ function renderizarCardapio() {
 
     if (!containerLanches) return;
 
-    // Limpa os containers antes de renderizar os dados do banco
     containerLanches.innerHTML = "";
     if (containerAcompanhamentos) containerAcompanhamentos.innerHTML = "";
     if (containerBebidas) containerBebidas.innerHTML = "";
 
     PRODUTOS_BANCO.forEach(p => {
-        // Verifica se o produto está ATIVO no banco
         if (p.status === true || p.status === 't' || p.status === 1 || p.status === '1') {
-            
             const icone = getItemIcone(p.nome);
-            
-            // CORREÇÃO: HTML adaptado para usar as classes originais do CSS do Cloud Chefs e os botões vermelhos
+
             const cardHtml = `
                 <div class="produto-item">
                     <span class="item-icone" style="font-size: 65px; display: block; margin-bottom: 10px;">${icone}</span>
@@ -60,33 +59,29 @@ function renderizarCardapio() {
                 </div>
             `;
 
-            // Lógica de separação por abas baseada no nome do item
             const nome = p.nome.toLowerCase();
             if (nome.includes('batata') || nome.includes('fritas') || nome.includes('acompanhamento')) {
                 if (containerAcompanhamentos) containerAcompanhamentos.innerHTML += cardHtml;
             } else if (nome.includes('coca') || nome.includes('suco') || nome.includes('refri') || nome.includes('agua') || nome.includes('fanta') || nome.includes('guaraná')) {
                 if (containerBebidas) containerBebidas.innerHTML += cardHtml;
             } else {
-                // Tudo o que não for bebida ou batata cai em lanches por segurança
                 containerLanches.innerHTML += cardHtml;
             }
         }
     });
 }
 
-// --- LOGICA DO CARRINHO ---
+// --- CARRINHO ---
 function alterarQtd(id, delta) {
     if (!carrinho[id]) carrinho[id] = 0;
-    
+
     carrinho[id] += delta;
     if (carrinho[id] < 0) carrinho[id] = 0;
 
-    // Se a quantidade voltar a ser zero, podemos remover do carrinho para limpar o payload
     if (carrinho[id] === 0) {
         delete carrinho[id];
     }
 
-    // Atualiza dinamicamente o número central do contador na tela
     const qtdEl = document.getElementById(`qtd-${id}`);
     if (qtdEl) {
         qtdEl.textContent = carrinho[id] || 0;
@@ -97,8 +92,7 @@ function alterarQtd(id, delta) {
 
 function atualizarTotais() {
     total = 0;
-    
-    // Percorre o carrinho e busca o preço correspondente no array vindo da AWS
+
     for (const id in carrinho) {
         const produto = PRODUTOS_BANCO.find(p => p.id_produto == id);
         if (produto) {
@@ -116,13 +110,12 @@ function atualizarTotais() {
 }
 
 // --- FINALIZAÇÃO E ENVIO DO PEDIDO ---
-function finalizarPedido() {
+async function finalizarPedido() {
     if (total === 0) return exibirMensagem("O pedido não pode estar vazio.", "alerta");
     if (!formaPagamento) return exibirMensagem("Selecione a forma de pagamento.", "alerta");
 
     const nomeCliente = document.getElementById('nome-cliente').value.trim();
 
-    // Mapeia o carrinho para a estrutura JSON que o seu salvar_pedido.php precisa ler
     const itensPedido = [];
     for (const id in carrinho) {
         if (carrinho[id] > 0) {
@@ -142,24 +135,200 @@ function finalizarPedido() {
         produtos: itensPedido
     };
 
-    fetch(API_SALVAR_PEDIDO, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(novoPedido)
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
+    const btnFinalizar = document.getElementById('btn-finalizar-pedido');
+    if (btnFinalizar) {
+        btnFinalizar.disabled = true;
+        btnFinalizar.textContent = "PROCESSANDO...";
+    }
+
+    try {
+        const resposta = await fetch(API_SALVAR_PEDIDO, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(novoPedido)
+        });
+
+        const data = await resposta.json();
+
+        if (!data.success) {
+            exibirMensagem(`Erro: ${data.error}`, "erro");
+            restaurarBotaoFinalizar();
+            return;
+        }
+
+        if (formaPagamento === "PIX") {
+            await criarPix(data.id_pedido);
+        } else {
             exibirMensagem("Pedido enviado com sucesso!", "sucesso");
             setTimeout(() => window.location.href = "monitoramento.html", 1500);
-        } else {
-            exibirMensagem(`Erro: ${data.error}`, "erro");
         }
-    })
-    .catch(err => exibirMensagem("Falha na conexão com o servidor.", "erro"));
+
+    } catch (err) {
+        console.error(err);
+        exibirMensagem("Falha na conexão com o servidor.", "erro");
+        restaurarBotaoFinalizar();
+    }
 }
 
-// --- MAPEAMENTO DE ÍCONES (EMOJIS) ---
+function restaurarBotaoFinalizar() {
+    const btnFinalizar = document.getElementById('btn-finalizar-pedido');
+    if (btnFinalizar) {
+        btnFinalizar.disabled = false;
+        btnFinalizar.textContent = "FINALIZAR";
+    }
+}
+
+// --- PIX MERCADO PAGO ---
+async function criarPix(idPedido) {
+    try {
+        const resposta = await fetch(API_CRIAR_PIX, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id_pedido: idPedido })
+        });
+
+        const data = await resposta.json();
+
+        if (!data.success) {
+            exibirMensagem(data.error || "Erro ao gerar Pix.", "erro");
+            restaurarBotaoFinalizar();
+            return;
+        }
+
+        mostrarModalPix(data, idPedido);
+        iniciarConsultaPagamentoPix(idPedido);
+
+    } catch (err) {
+        console.error(err);
+        exibirMensagem("Falha ao gerar Pix.", "erro");
+        restaurarBotaoFinalizar();
+    }
+}
+
+function mostrarModalPix(data, idPedido) {
+    fecharModalPix();
+
+    const modal = document.createElement("div");
+    modal.id = "modal-pix";
+    modal.style.position = "fixed";
+    modal.style.top = "0";
+    modal.style.left = "0";
+    modal.style.width = "100%";
+    modal.style.height = "100%";
+    modal.style.background = "rgba(0, 0, 0, 0.75)";
+    modal.style.display = "flex";
+    modal.style.alignItems = "center";
+    modal.style.justifyContent = "center";
+    modal.style.zIndex = "99999";
+    modal.style.padding = "16px";
+
+    const qrImg = data.qr_code_base64
+        ? `<img src="data:image/png;base64,${data.qr_code_base64}" alt="QR Code Pix" style="width:260px; max-width:100%; border:1px solid #ddd; border-radius:10px;">`
+        : `<p style="color:#b00020;">QR Code em imagem não retornou. Use o Pix Copia e Cola abaixo.</p>`;
+
+    modal.innerHTML = `
+        <div style="background:#fff; color:#222; width:100%; max-width:440px; border-radius:16px; padding:24px; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.35);">
+            <h2 style="margin-top:0;">Pagamento via Pix</h2>
+            <p style="margin-bottom:14px;">Pedido Nº <strong>${String(idPedido).padStart(5, '0')}</strong></p>
+            ${qrImg}
+            <p style="font-weight:bold; margin-top:18px;">Pix Copia e Cola</p>
+            <textarea id="pix-copia-cola" readonly style="width:100%; height:90px; resize:none; border:1px solid #ccc; border-radius:8px; padding:8px; font-size:12px;">${data.copia_cola || ''}</textarea>
+            <div style="display:flex; gap:10px; margin-top:14px; justify-content:center; flex-wrap:wrap;">
+                <button onclick="copiarCodigoPix()" style="padding:10px 16px; border:none; border-radius:8px; background:#28a745; color:white; font-weight:bold; cursor:pointer;">Copiar Pix</button>
+                <button onclick="consultarPixAgora(${idPedido})" style="padding:10px 16px; border:none; border-radius:8px; background:#222; color:white; font-weight:bold; cursor:pointer;">Já paguei</button>
+                <button onclick="cancelarAguardarPix()" style="padding:10px 16px; border:none; border-radius:8px; background:#777; color:white; font-weight:bold; cursor:pointer;">Fechar</button>
+            </div>
+            <p id="status-pix" style="margin-top:18px; font-weight:bold; color:#856404;">Aguardando pagamento...</p>
+            <p style="font-size:12px; color:#666; margin-bottom:0;">A tela verifica automaticamente a cada 5 segundos.</p>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+}
+
+function copiarCodigoPix() {
+    const campo = document.getElementById("pix-copia-cola");
+    if (!campo) return;
+
+    campo.select();
+    campo.setSelectionRange(0, 99999);
+
+    navigator.clipboard.writeText(campo.value)
+        .then(() => exibirMensagem("Código Pix copiado!", "sucesso"))
+        .catch(() => {
+            document.execCommand('copy');
+            exibirMensagem("Código Pix copiado!", "sucesso");
+        });
+}
+
+function iniciarConsultaPagamentoPix(idPedido) {
+    if (intervaloPix) clearInterval(intervaloPix);
+
+    intervaloPix = setInterval(() => {
+        consultarPixAgora(idPedido, false);
+    }, 5000);
+}
+
+async function consultarPixAgora(idPedido, mostrarMensagem = true) {
+    const statusEl = document.getElementById("status-pix");
+
+    try {
+        const resposta = await fetch(API_CONSULTAR_PIX, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id_pedido: idPedido })
+        });
+
+        const data = await resposta.json();
+
+        if (!data.success) {
+            if (mostrarMensagem) exibirMensagem(data.error || "Erro ao consultar pagamento.", "erro");
+            return;
+        }
+
+        if (data.pago) {
+            if (intervaloPix) clearInterval(intervaloPix);
+            intervaloPix = null;
+
+            if (statusEl) {
+                statusEl.textContent = "Pagamento aprovado! Enviando para produção...";
+                statusEl.style.color = "#28a745";
+            }
+
+            exibirMensagem("Pagamento Pix aprovado!", "sucesso");
+
+            setTimeout(() => {
+                window.location.href = "monitoramento.html";
+            }, 1500);
+        } else {
+            if (statusEl) {
+                statusEl.textContent = `Aguardando pagamento... Status: ${data.status || 'pendente'}`;
+                statusEl.style.color = "#856404";
+            }
+
+            if (mostrarMensagem) {
+                exibirMensagem("Pagamento ainda não aprovado.", "alerta");
+            }
+        }
+    } catch (err) {
+        console.error(err);
+        if (mostrarMensagem) exibirMensagem("Falha ao consultar pagamento Pix.", "erro");
+    }
+}
+
+function fecharModalPix() {
+    const modal = document.getElementById("modal-pix");
+    if (modal) modal.remove();
+}
+
+function cancelarAguardarPix() {
+    if (intervaloPix) clearInterval(intervaloPix);
+    intervaloPix = null;
+    fecharModalPix();
+    restaurarBotaoFinalizar();
+}
+
+// --- MAPEAMENTO DE ÍCONES ---
 function getItemIcone(nomeItem) {
     const nome = nomeItem.toLowerCase();
     if (nome.match(/(burguer|mac|queijo|chicken|quarteirão|stacker|combo|leader)/)) return '🍔';
@@ -206,4 +375,9 @@ function mudarAba(categoria) {
     document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('ativa'));
     const btn = document.querySelector(`.aba-btn[data-categoria='${categoria}']`);
     if (btn) btn.classList.add('ativa');
+}
+
+function voltarParaCardapio() {
+    document.getElementById('etapa-pagamento').classList.remove('ativa');
+    document.getElementById('etapa-cardapio').classList.add('ativa');
 }
