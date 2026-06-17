@@ -6,16 +6,62 @@
     <title>Cloud Chefs - Novo Pedido</title>
     <link rel="stylesheet" href="css/pedidos.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        /* --- LAYOUT DOS BOTÕES VERMELHOS (Igual à imagem) --- */
+        .quantidade {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .btn-qtd {
+            background-color: #A60000;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            width: 32px;
+            height: 32px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+
+        .btn-qtd:active {
+            transform: scale(0.90);
+        }
+
+        .qtd-numero {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /* --- AJUSTE DO MINI ÍCONE DO BANCO DE DADOS --- */
+        .item-icone {
+            font-size: 65px; /* Transforma o emoji num ícone gigante */
+            display: block;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
     <header class="topo">
-    <a href="#" onclick="history.back()" class="btn-voltar-topo">← Voltar</a>
-    <img src="img/logo.png" alt="Logo Cloud Chefs" class="logo-topo">
-    <h1>Novo Pedido</h1>
-</header>
+        <a href="#" onclick="history.back()" class="btn-voltar-topo">← Voltar</a>
+        <img src="img/logo.png" alt="Logo Cloud Chefs" class="logo-topo">
+        <h1>Novo Pedido</h1>
+    </header>
 
     <div class="container">
-
         <div id="etapa-cliente" class="etapa ativa">
             <p class="instrucao">Insira o nome do cliente para iniciar o pedido:</p>
             
@@ -38,16 +84,15 @@
             </div>
 
             <div class="produtos-categorias">
-
                 <div id="produtos-lanches" class="produtos-container ativa">
                     <div class="produto-item">
                         <img src="img/hambuguer1.png" alt="Mega Stacker" class="img-produto">
                         <h2>Mega Stacker</h2>
                         <p class="preco">R$28,90</p>
                         <div class="quantidade">
-                            <button onclick="diminuir(0)">−</button>
-                            <span id="qtd0">0</span>
-                            <button onclick="aumentar(0)">+</button>
+                            <button class="btn-qtd" onclick="diminuir(0)">−</button>
+                            <span class="qtd-numero" id="qtd0">0</span>
+                            <button class="btn-qtd" onclick="aumentar(0)">+</button>
                         </div>
                     </div>
 
@@ -56,9 +101,9 @@
                         <h2>Big Mac</h2>
                         <p class="preco">R$28,90</p>
                         <div class="quantidade">
-                            <button onclick="diminuir(1)">−</button>
-                            <span id="qtd1">0</span>
-                            <button onclick="aumentar(1)">+</button>
+                            <button class="btn-qtd" onclick="diminuir(1)">−</button>
+                            <span class="qtd-numero" id="qtd1">0</span>
+                            <button class="btn-qtd" onclick="aumentar(1)">+</button>
                         </div>
                     </div>
 
@@ -67,9 +112,9 @@
                         <h2>Duplo Quarteirão</h2>
                         <p class="preco">R$32,50</p>
                         <div class="quantidade">
-                            <button onclick="diminuir(2)">−</button>
-                            <span id="qtd2">0</span>
-                            <button onclick="aumentar(2)">+</button>
+                            <button class="btn-qtd" onclick="diminuir(2)">−</button>
+                            <span class="qtd-numero" id="qtd2">0</span>
+                            <button class="btn-qtd" onclick="aumentar(2)">+</button>
                         </div>
                     </div>
 
@@ -78,9 +123,9 @@
                         <h2>Duplo Burguer c/ Queijo</h2>
                         <p class="preco">R$25,00</p>
                         <div class="quantidade">
-                            <button onclick="diminuir(3)">−</button>
-                            <span id="qtd3">0</span>
-                            <button onclick="aumentar(3)">+</button>
+                            <button class="btn-qtd" onclick="diminuir(3)">−</button>
+                            <span class="qtd-numero" id="qtd3">0</span>
+                            <button class="btn-qtd" onclick="aumentar(3)">+</button>
                         </div>
                     </div>
                     
@@ -89,9 +134,9 @@
                         <h2>Duplo Burguer c/ Bacon</h2>
                         <p class="preco">R$30,50</p>
                         <div class="quantidade">
-                            <button onclick="diminuir(4)">−</button>
-                            <span id="qtd4">0</span>
-                            <button onclick="aumentar(4)">+</button>
+                            <button class="btn-qtd" onclick="diminuir(4)">−</button>
+                            <span class="qtd-numero" id="qtd4">0</span>
+                            <button class="btn-qtd" onclick="aumentar(4)">+</button>
                         </div>
                     </div>
 
@@ -100,9 +145,9 @@
                         <h2>Mc Chicken Duplo</h2>
                         <p class="preco">R$18,00</p>
                         <div class="quantidade">
-                            <button onclick="diminuir(5)">−</button>
-                            <span id="qtd5">0</span>
-                            <button onclick="aumentar(5)">+</button>
+                            <button class="btn-qtd" onclick="diminuir(5)">−</button>
+                            <span class="qtd-numero" id="qtd5">0</span>
+                            <button class="btn-qtd" onclick="aumentar(5)">+</button>
                         </div>
                     </div>
 
@@ -111,9 +156,9 @@
                         <h2>Cheeseburguer</h2>
                         <p class="preco">R$22,00</p>
                         <div class="quantidade">
-                            <button onclick="diminuir(6)">−</button>
-                            <span id="qtd6">0</span>
-                            <button onclick="aumentar(6)">+</button>
+                            <button class="btn-qtd" onclick="diminuir(6)">−</button>
+                            <span class="qtd-numero" id="qtd6">0</span>
+                            <button class="btn-qtd" onclick="aumentar(6)">+</button>
                         </div>
                     </div>
 
@@ -122,9 +167,9 @@
                         <h2>Mc Chicken Bacon</h2>
                         <p class="preco">R$38,00</p>
                         <div class="quantidade">
-                            <button onclick="diminuir(7)">−</button>
-                            <span id="qtd7">0</span>
-                            <button onclick="aumentar(7)">+</button>
+                            <button class="btn-qtd" onclick="diminuir(7)">−</button>
+                            <span class="qtd-numero" id="qtd7">0</span>
+                            <button class="btn-qtd" onclick="aumentar(7)">+</button>
                         </div>
                     </div>
                 </div>
@@ -135,9 +180,9 @@
                         <h2>Batata Frita P</h2>
                         <p class="preco">R$9,00</p>
                         <div class="quantidade">
-                            <button onclick="diminuir(8)">−</button>
-                            <span id="qtd8">0</span>
-                            <button onclick="aumentar(8)">+</button>
+                            <button class="btn-qtd" onclick="diminuir(8)">−</button>
+                            <span class="qtd-numero" id="qtd8">0</span>
+                            <button class="btn-qtd" onclick="aumentar(8)">+</button>
                         </div>
                     </div>
                     <div class="produto-item">
@@ -145,9 +190,9 @@
                         <h2>Batata Frita M</h2>
                         <p class="preco">R$13,00</p>
                         <div class="quantidade">
-                            <button onclick="diminuir(9)">−</button>
-                            <span id="qtd9">0</span>
-                            <button onclick="aumentar(9)">+</button>
+                            <button class="btn-qtd" onclick="diminuir(9)">−</button>
+                            <span class="qtd-numero" id="qtd9">0</span>
+                            <button class="btn-qtd" onclick="aumentar(9)">+</button>
                         </div>
                     </div>
                     <div class="produto-item">
@@ -155,9 +200,9 @@
                         <h2>Batata Frita G</h2>
                         <p class="preco">R$17,00</p>
                         <div class="quantidade">
-                            <button onclick="diminuir(10)">−</button>
-                            <span id="qtd10">0</span>
-                            <button onclick="aumentar(10)">+</button>
+                            <button class="btn-qtd" onclick="diminuir(10)">−</button>
+                            <span class="qtd-numero" id="qtd10">0</span>
+                            <button class="btn-qtd" onclick="aumentar(10)">+</button>
                         </div>
                     </div>
                 </div>
@@ -168,9 +213,9 @@
                         <h2>Coca-Cola</h2>
                         <p class="preco">R$8,00</p>
                         <div class="quantidade">
-                            <button onclick="diminuir(11)">−</button>
-                            <span id="qtd11">0</span>
-                            <button onclick="aumentar(11)">+</button>
+                            <button class="btn-qtd" onclick="diminuir(11)">−</button>
+                            <span class="qtd-numero" id="qtd11">0</span>
+                            <button class="btn-qtd" onclick="aumentar(11)">+</button>
                         </div>
                     </div>
                     <div class="produto-item">
@@ -178,9 +223,9 @@
                         <h2>Guaraná</h2>
                         <p class="preco">R$8,00</p>
                         <div class="quantidade">
-                            <button onclick="diminuir(12)">−</button>
-                            <span id="qtd12">0</span>
-                            <button onclick="aumentar(12)">+</button>
+                            <button class="btn-qtd" onclick="diminuir(12)">−</button>
+                            <span class="qtd-numero" id="qtd12">0</span>
+                            <button class="btn-qtd" onclick="aumentar(12)">+</button>
                         </div>
                     </div>
                     <div class="produto-item">
@@ -188,14 +233,15 @@
                         <h2>Fanta Laranja</h2>
                         <p class="preco">R$8,00</p>
                         <div class="quantidade">
-                            <button onclick="diminuir(13)">−</button>
-                            <span id="qtd13">0</span>
-                            <button onclick="aumentar(13)">+</button>
+                            <button class="btn-qtd" onclick="diminuir(13)">−</button>
+                            <span class="qtd-numero" id="qtd13">0</span>
+                            <button class="btn-qtd" onclick="aumentar(13)">+</button>
                         </div>
                     </div>
                 </div>
-
-            </div> <div class="rodape">
+            </div> 
+            
+            <div class="rodape">
                 <div class="totais">
                     <p>Subtotal: R$ <span id="subtotal">0,00</span></p>
                     <h3>Total: R$ <span id="total">0,00</span></h3>
@@ -231,28 +277,32 @@
                 <button class="btn-finalizar" onclick="finalizarPedido()" id="btn-finalizar-pedido" disabled>FINALIZAR</button>
             </div>
         </div>
-        </div>
+    </div>
     
     <div id="global-message-container"></div>
     
     <script src="js/auth.js"></script>
-    
     <script src="js/estoque.js"></script>
     <script src="js/pedidos.js"></script>
     
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Inicializa a exibição de quantidades e totais
-            document.querySelectorAll('.produto-item').forEach((item, index) => {
-                document.getElementById(`qtd${index}`).textContent = quantidades[index];
-            });
-            document.addEventListener('DOMContentLoaded', () => {
-            // Garante que os elementos existem antes de atualizar
-            if (document.getElementById("subtotal") && document.getElementById("total")) {
-                quantidades = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-                atualizarTotais(); 
+            if (typeof quantidades === 'undefined') {
+                window.quantidades = [0,0,0,0,0,0,0,0,0,0,0,0,0,0];
             }
-        });
+            
+            document.querySelectorAll('.produto-item').forEach((item, index) => {
+                const qtdSpan = document.getElementById(`qtd${index}`);
+                if (qtdSpan) {
+                    qtdSpan.textContent = quantidades[index];
+                }
+            });
+
+            if (document.getElementById("subtotal") && document.getElementById("total")) {
+                if (typeof atualizarTotais === 'function') {
+                    atualizarTotais(); 
+                }
+            }
         });
     </script>
 </body>

@@ -1,202 +1,99 @@
-/*
-============================================================
-== ARQUIVO FINAL E SEGURO - PASSO 2 ==
-== USE ESTE CÓDIGO APÓS CRIAR SEU ADMIN ==
-============================================================
-*/
+// colaboradores.js
+const API_URL = "http://3.141.192.46/Cloudchefs2026/cloudchefs/backend/usuarios.php";
 
-/**
- * Renderiza a tabela de colaboradores vinda do BANCO.
- */
-function renderizarTabela(colaboradores) {
+console.log("Iniciando script de colaboradores...");
+
+// Função global para renderizar a tabela
+window.renderizarTabela = async function() {
     const tabelaBody = document.getElementById('tabela-body');
-    tabelaBody.innerHTML = '';
-    
-    const usuarioLogado = getUsuarioLogado(); 
-    const podeAlterar = usuarioLogado && usuarioLogado.tipo_usuario === 'admin';
+    if (!tabelaBody) return;
 
-    colaboradores.forEach(colaborador => {
-        if (colaborador.tipo_usuario === 'cliente') {
+    tabelaBody.innerHTML = '<tr><td colspan="4">Buscando dados no RDS...</td></tr>';
+    
+    try {
+        console.log("Chamando API em:", API_URL);
+        const resposta = await fetch(API_URL);
+        const colaboradores = await resposta.json();
+
+        tabelaBody.innerHTML = ''; 
+        
+        if (!colaboradores || colaboradores.length === 0) {
+            tabelaBody.innerHTML = '<tr><td colspan="4">Nenhum usuário no banco.</td></tr>';
             return;
         }
 
-        const row = tabelaBody.insertRow();
-        row.insertCell().textContent = colaborador.nome;
-        
-        const cellSenha = row.insertCell();
-        cellSenha.className = 'senha-celula';
-        cellSenha.innerHTML = `<span>******</span>`;
+        colaboradores.forEach(col => {
+            const row = tabelaBody.insertRow();
+            row.innerHTML = `
+                <td>${col.nome}</td>
+                <td>${col.login}</td>
+                <td>${col.tipo_usuario || 'colaborador'}</td>
+                <td>
+                    <button class="btn-excluir-tabela" onclick="excluirColaborador(${col.id_usuario})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+        });
+    } catch (err) {
+        console.error("Erro na carga:", err);
+        tabelaBody.innerHTML = '<tr><td colspan="4" style="color:red">Erro ao conectar com AWS.</td></tr>';
+    }
+};
 
-        const cellPermissao = row.insertCell();
-        const select = document.createElement('select');
-        select.className = 'role-select';
-        
-        const cargo = getCargoDoUsuario(colaborador.tipo_usuario); // auth.js
-        
-        let optionGerente = document.createElement('option');
-        optionGerente.value = 'admin'; // O valor é o do BANCO
-        optionGerente.textContent = PERMISSOES.GERENTE.nome;
-        select.appendChild(optionGerente);
+// Função global para cadastrar
+window.cadastrarColaborador = async function() {
+    console.log("Botão de cadastro clicado!");
+    const nome = document.getElementById('nome').value.trim();
+    const login = document.getElementById('login').value.trim();
+    const senha = document.getElementById('senha').value.trim();
 
-        let optionAtendente = document.createElement('option');
-        optionAtendente.value = 'colaborador'; // O valor é o do BANCO
-        optionAtendente.textContent = PERMISSOES.ATENDENTE.nome;
-        select.appendChild(optionAtendente);
-        
-        select.value = colaborador.tipo_usuario;
-        // Este 'onchange' é seguro, pois é criado dinamicamente
-        select.onchange = (e) => atualizarPermissao(colaborador.id_usuario, e.target.value);
-        select.disabled = !podeAlterar;
-        cellPermissao.appendChild(select);
-
-        const cellAcessos = row.insertCell();
-        const permissoesObj = PERMISSOES[cargo];
-        cellAcessos.textContent = permissoesObj ? permissoesObj.acessos.join(', ') : 'N/A';
-    });
-}
-
-/**
- * Atualiza a permissão de um colaborador no BANCO.
- */
-async function atualizarPermissao(id_usuario, novo_tipo_usuario) {
-    const usuarioLogado = getUsuarioLogado();
-    if (!usuarioLogado || usuarioLogado.tipo_usuario !== 'admin') {
-        exibirMensagem("Você não tem permissão para alterar permissões.", "erro");
+    if (!nome || !login || !senha) {
+        alert("Preencha todos os campos!");
         return;
     }
 
     try {
-        const resposta = await fetch("../backend/atualizar_permissao.php", {
+        const res = await fetch(API_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-                id_usuario: id_usuario, 
-                tipo_usuario: novo_tipo_usuario 
-            })
+            body: JSON.stringify({ nome, login, senha, tipo_usuario: 'colaborador' })
         });
-        const data = await resposta.json();
+        const data = await res.json();
 
         if (data.success) {
-            exibirMensagem("Permissão atualizada com sucesso!", "sucesso");
-            carregarColaboradoresPagina(); 
+            alert("Sucesso! Salvo no RDS.");
+            document.getElementById('nome').value = '';
+            document.getElementById('login').value = '';
+            document.getElementById('senha').value = '';
+            renderizarTabela();
         } else {
-            exibirMensagem(`Erro: ${data.error}`, "erro");
+            alert("Erro do PHP: " + data.error);
         }
     } catch (err) {
-        exibirMensagem("Falha na conexão ao atualizar permissão.", "erro");
+        console.error("Erro no cadastro:", err);
+        alert("Falha de conexão. Veja o console.");
     }
-}
+};
 
-/**
- * Cadastra um novo colaborador no BANCO.
- */
-async function cadastrarColaborador() {
-    const usuarioLogado = getUsuarioLogado();
-    if (!usuarioLogado || usuarioLogado.tipo_usuario !== 'admin') {
-        exibirMensagem('Acesso negado. Apenas Gerentes podem cadastrar.', 'erro');
-        return;
-    }
-
-    const nomeInput = document.getElementById('nome');
-    const loginInput = document.getElementById('login'); // Novo campo
-    const senhaInput = document.getElementById('senha');
-    
-    const nome = nomeInput.value.trim();
-    const login = loginInput.value.trim();
-    const senha = senhaInput.value.trim();
-
-    if (nome === "" || login === "" || senha === "") {
-        exibirMensagem('Nome, Login e Senha são obrigatórios.', 'alerta');
-        return;
-    }
-    
-    if (senha.length < 4) {
-        exibirMensagem('A senha deve ter no mínimo 4 caracteres.', 'alerta');
-        return;
-    }
-    
+window.excluirColaborador = async function(id) {
+    if (!confirm("Deseja excluir?")) return;
     try {
-        const resposta = await fetch("http://localhost/cloudchefs/backend/usuarios.php", {
-            method: "POST",
+        await fetch(API_URL, {
+            method: "DELETE",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-                nome: nome, 
-                login: login, 
-                senha: senha,
-                tipo_usuario: 'colaborador' // Padrão é criar como Atendente
-            })
+            body: JSON.stringify({ id_usuario: id })
         });
-        const data = await resposta.json();
-
-        if (data.success) {
-            exibirMensagem(`Colaborador ${nome} cadastrado como ATENDENTE!`, 'sucesso');
-            nomeInput.value = '';
-            loginInput.value = '';
-            senhaInput.value = '';
-            carregarColaboradoresPagina(); // Recarrega a tabela
-        } else {
-            exibirMensagem(`Erro ao cadastrar: ${data.error}`, 'erro');
-        }
+        renderizarTabela();
     } catch (err) {
-        exibirMensagem("Falha na conexão ao cadastrar.", "erro");
+        alert("Erro ao excluir.");
     }
+};
+
+// Força a carga da página
+function carregarColaboradoresPagina() {
+    renderizarTabela();
 }
 
-/**
- * Alterna a visibilidade da senha no campo de CADASTRO.
- */
-function toggleSenhaInput() {
-    const senhaInput = document.getElementById('senha');
-    const eyeIcon = document.getElementById('eye-icon-cadastro');
-    
-    if (senhaInput.type === 'password') {
-        senhaInput.type = 'text';
-        eyeIcon.classList.remove('fa-eye');
-        eyeIcon.classList.add('fa-eye-slash');
-    } else {
-        senhaInput.type = 'password';
-        eyeIcon.classList.remove('fa-eye-slash');
-        eyeIcon.classList.add('fa-eye');
-    }
-}
-
-/**
- * Função principal: carrega os dados do banco e renderiza a tabela.
- */
-async function carregarColaboradoresPagina() {
-    // A verificação de acesso já acontece aqui (vinda do auth.js)
-    if (!verificarAcessoPagina('Colaboradores')) { 
-        return; // Sai se não tiver permissão
-    }
-    
-    try {
-        const resposta = await fetch("../backend/usuarios.php");
-        const colaboradores = await resposta.json();
-        
-        if (Array.isArray(colaboradores)) {
-            renderizarTabela(colaboradores);
-        } else {
-            exibirMensagem("Erro ao carregar lista de colaboradores.", "erro");
-        }
-    } catch (err) {
-        exibirMensagem("Falha ao buscar usuários no servidor.", "erro");
-    }
-}
-
-
-// --- 🚀 Ponto de Entrada Principal ---
-document.addEventListener("DOMContentLoaded", () => {
-    
-    const btnCadastrar = document.getElementById('btn-cadastrar');
-    if (btnCadastrar) {
-        btnCadastrar.onclick = cadastrarColaborador;
-    }
-
-    const btnToggleSenha = document.getElementById('btn-toggle-senha');
-    if (btnToggleSenha) {
-        btnToggleSenha.onclick = toggleSenhaInput;
-    }
-
-    // Chama a função principal para carregar a tabela
-    carregarColaboradoresPagina();
-});
+// Garante que o script está vivo
+console.log("Script carregado com sucesso.");

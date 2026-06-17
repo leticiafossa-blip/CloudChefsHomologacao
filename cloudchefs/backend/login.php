@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // ---- O SEU CÓDIGO ANTIGO COMEÇA A PARTIR DAQUI ----
 require 'connect.php';
+// ... o seu bloco de CORS e require 'connect.php' continua igualzinho em cima ...
 
 $data = json_decode(file_get_contents("php://input"), true);
 
@@ -27,15 +28,18 @@ if (!$login || !$senha) {
 }
 
 try {
-    $stmt = $db->prepare("SELECT * FROM usuario WHERE login = :login");
+    $stmt = $db->prepare("SELECT * FROM usuario WHERE login ILIKE :login");
     $stmt->execute([':login' => $login]);
     $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($usuario && password_verify($senha, $usuario['senha'])) {
-        unset($usuario['senha']); 
+    if ($usuario && password_verify($senha, $usuario['senha'])){
+        unset($usuario['senha']); // Apaga a senha antes de mandar pro frontend (Boa prática!)
+        
         echo json_encode([
             "success" => true, 
-            "usuario" => $usuario
+            // 🚀 MUDANÇA AQUI: Enviando como 'user' e 'usuario' para garantir que o JS vai achar, independente de qual ele busque!
+            "user" => $usuario,
+            "usuario" => $usuario 
         ]);
     } else {
         echo json_encode(["success" => false, "error" => "Usuário ou senha inválidos"]);

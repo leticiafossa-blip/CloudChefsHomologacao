@@ -9,20 +9,26 @@
 </head>
 <body onload="carregarColaboradoresPagina()">
     <header class="topo">
-    <a href="#" onclick="history.back()" class="btn-voltar-topo">← Voltar</a>
-    <img src="img/logo.png" alt="Logo Cloud Chefs" class="logo-topo">
-    <h1>Colaboradores</h1>
-</header>
-<a href="#" onclick="history.back()" class="btn-voltar-inferior" style="display: none;">VOLTAR</a>
+        <a href="#" onclick="history.back()" class="btn-voltar-topo">← Voltar</a>
+        <img src="img/logo.png" alt="Logo Cloud Chefs" class="logo-topo">
+        <h1>Colaboradores</h1>
+    </header>
 
     <div class="container">
         
+        <!-- SEÇÃO DE CADASTRO ATUALIZADA -->
         <div class="secao-cadastro">
             <h2>Cadastrar Novo Colaborador</h2>
             
             <div class="input-group">
-                <label for="nome">Primeiro Nome:</label>
-                <input type="text" id="nome" class="input-text" placeholder="Ex: João">
+                <label for="nome">Nome Completo:</label>
+                <input type="text" id="nome" class="input-text" placeholder="Ex: Mateus Vargas">
+            </div>
+
+            <!-- NOVO CAMPO: LOGIN -->
+            <div class="input-group">
+                <label for="login">Login (Usuário):</label>
+                <input type="text" id="login" class="input-text" placeholder="Ex: mateus.vargas">
             </div>
 
             <div class="input-group">
@@ -38,19 +44,21 @@
             <button class="btn-cadastrar" onclick="cadastrarColaborador()">CADASTRAR</button>
         </div>
 
+        <!-- TABELA ATUALIZADA PARA O PADRÃO AWS -->
         <div class="secao-permissoes">
-            <h2>Permissões de Acesso</h2>
+            <h2>Gestão de Usuários</h2>
             <table class="tabela-colaboradores">
                 <thead>
                     <tr>
                         <th>Nome</th>
-                        <th>Senha</th> 
+                        <th>Login</th> <!-- Mudou de Senha para Login -->
                         <th>Permissão</th>
-                        <th>Acessos</th>
+                        <th>Ações</th> <!-- Mudou de Acessos para Ações -->
                     </tr>
                 </thead>
                 <tbody id="tabela-body">
-                    </tbody>
+                    <!-- Gerado dinamicamente pelo JS -->
+                </tbody>
             </table>
         </div>
         
@@ -60,6 +68,6 @@
 
     <div id="global-message-container"></div>
     <script src="js/auth.js"></script> 
-    <script src="js/colaboradores.js"></script>
+    <script src="js/colaboradores.js?v=1.2"></script>
 </body>
 </html>

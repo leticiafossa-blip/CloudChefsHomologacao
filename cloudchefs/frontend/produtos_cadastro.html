@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Chefs - Cadastro de Produtos</title>
+    <link rel="stylesheet" href="css/colaboradores.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .ingrediente-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; background: #f4f4f4; padding: 10px; border-radius: 5px; }
+        .select-item { flex: 2; padding: 8px; }
+        .input-qtd { flex: 1; padding: 8px; width: 80px; }
+        .btn-remover { color: red; cursor: pointer; border: none; background: none; font-weight: bold; }
+    </style>
+</head>
+<body onload="inicializarPagina()">
+    <header class="topo">
+        <a href="produtos.html" class="btn-voltar-topo">← Voltar</a>
+        <img src="img/logo.png" alt="Logo Cloud Chefs" class="logo-topo">
+        <h1>Novo Produto</h1>
+    </header>
+
+    <div class="container">
+        <div class="secao-cadastro">
+            <h2>Cadastrar Lanche / Item</h2>
+            <form id="form-produto">
+                <div class="input-group">
+                    <label>Nome do Produto:</label>
+                    <input type="text" id="nome-produto" class="input-text" placeholder="Ex: X-Salada">
+                </div>
+                <div class="input-group">
+                    <label>Preço de Venda:</label>
+                    <input type="number" id="preco-produto" step="0.01" class="input-text" placeholder="0.00">
+                </div>
+
+                <h3>Ingredientes (Baixa de Estoque)</h3>
+                <div id="lista-ingredientes">
+                    </div>
+                
+                <button type="button" onclick="adicionarLinhaIngrediente()" class="btn-secundario" style="background: #666; color: white; padding: 10px; border: none; border-radius: 4px; margin-bottom: 20px; cursor: pointer;">
+                    + Adicionar Ingrediente
+                </button>
+
+                <button type="button" onclick="salvarProduto()" class="btn-cadastrar">
+                    SALVAR PRODUTO NO BANCO
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="global-message-container"></div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        const API_ESTOQUE = "http://3.144.118.111/Cloudchefs2026/cloudchefs/backend/estoque.php";
+        const API_PRODUTOS = "http://3.144.118.111/Cloudchefs2026/cloudchefs/backend/produtos.php";
+        
+        let itensEstoqueGlobais = [];
+
+        async function inicializarPagina() {
+            // Se o seu auth.js estiver ativo, ele verifica a permissão
+            if (typeof verificarAcessoPagina === 'function') {
+                verificarAcessoPagina('Produtos');
+            }
+            await carregarEstoque();
+            adicionarLinhaIngrediente(); 
+        }
+
+        async function carregarEstoque() {
+            try {
+                const res = await fetch(API_ESTOQUE);
+                itensEstoqueGlobais = await res.json();
+                console.log("Estoque carregado:", itensEstoqueGlobais);
+            } catch (err) {
+                console.error("Erro ao carregar estoque:", err);
+            }
+        }
+
+        function adicionarLinhaIngrediente() {
+            const container = document.getElementById('lista-ingredientes');
+            const div = document.createElement('div');
+            div.className = 'ingrediente-row';
+
+            // Criar as opções do select com base no que veio do banco
+            let options = '<option value="">Selecione...</option>';
+            itensEstoqueGlobais.forEach(item => {
+                options += `<option value="${item.id_item}">${item.nome_item} (${item.unidade_medida})</option>`;
+            });
+
+            div.innerHTML = `
+                <select class="select-item">${options}</select>
+                <input type="number" class="input-qtd" step="0.001" placeholder="Qtd">
+                <button type="button" class="btn-remover" onclick="this.parentElement.remove()">X</button>
+            `;
+            container.appendChild(div);
+        }
+
+        async function salvarProduto() {
+            const nome = document.getElementById('nome-produto').value;
+            const preco = document.getElementById('preco-produto').value;
+            
+            const ingredientes = [];
+            document.querySelectorAll('.ingrediente-row').forEach(row => {
+                const id = row.querySelector('.select-item').value;
+                const qtd = row.querySelector('.input-qtd').value;
+                if (id && qtd) {
+                    ingredientes.push({ id_item: id, quantidade: qtd });
+                }
+            });
+
+            if (!nome || !preco || ingredientes.length === 0) {
+                alert("Preencha todos os campos e adicione ingredientes!");
+                return;
+            }
+
+            try {
+                const res = await fetch(API_PRODUTOS, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, preco, ingredientes })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert("Produto cadastrado com sucesso!");
+                    window.location.href = "produtos.html";
+                } else {
+                    alert("Erro ao salvar: " + data.error);
+                }
+            } catch (err) {
+                alert("Erro de conexão com o servidor AWS.");
+            }
+        }
+    </script>
+</body>
+</html>

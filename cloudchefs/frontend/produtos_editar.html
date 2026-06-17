@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Cloud Chefs - Editar Produto</title>
+    <link rel="stylesheet" href="css/colaboradores.css">
+</head>
+<body onload="carregarDadosProduto()">
+    <header class="topo">
+        <a href="produtos.html" class="btn-voltar-topo">← Voltar</a>
+        <h1>Editar Produto</h1>
+    </header>
+
+    <div class="container">
+        <form id="form-editar">
+            <div class="input-group">
+                <label>Nome:</label>
+                <input type="text" id="edit-nome" class="input-text">
+            </div>
+            <div class="input-group">
+                <label>Preço:</label>
+                <input type="number" id="edit-preco" step="0.01" class="input-text">
+            </div>
+            <div class="input-group">
+                <label>Status do Produto:</label>
+                <select id="edit-status" class="input-text">
+                    <option value="true">Ativo (No Cardápio)</option>
+                    <option value="false">Inativo (Escondido)</option>
+                </select>
+            </div>
+
+            <h3>Composição</h3>
+            <div id="lista-ingredientes-edit"></div>
+            <button type="button" onclick="adicionarLinha()" style="margin-bottom:20px">+ Ingrediente</button>
+
+            <button type="button" onclick="salvarAlteracoes()" class="btn-cadastrar">SALVAR ALTERAÇÕES</button>
+        </form>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const produtoId = urlParams.get('id');
+        const API_EDIT = "http://3.144.118.111/Cloudchefs2026/cloudchefs/backend/produtos_editar_api.php";
+        const API_ESTOQUE = "http://3.144.118.111/Cloudchefs2026/cloudchefs/backend/estoque.php";
+        
+        let ingredientesEstoque = [];
+
+        async function carregarDadosProduto() {
+            // 1. Carrega estoque primeiro
+            const resEstoque = await fetch(API_ESTOQUE);
+            ingredientesEstoque = await resEstoque.json();
+
+            // 2. Carrega dados do produto
+            const res = await fetch(`${API_EDIT}?id=${produtoId}`);
+            const p = await res.json();
+
+            document.getElementById('edit-nome').value = p.nome;
+            document.getElementById('edit-preco').value = p.preco;
+            document.getElementById('edit-status').value = p.status ? "true" : "false";
+
+            p.ingredientes.forEach(ing => adicionarLinha(ing.id_item_estoque, ing.quantidade_necessaria));
+        }
+
+        function adicionarLinha(idSel = '', qtdSel = '') {
+            const container = document.getElementById('lista-ingredientes-edit');
+            const div = document.createElement('div');
+            div.style.marginBottom = "10px";
+            
+            let options = ingredientesEstoque.map(i => `<option value="${i.id_item}" ${i.id_item == idSel ? 'selected' : ''}>${i.nome_item}</option>`).join('');
+            
+            div.innerHTML = `
+                <select class="sel-ing">${options}</select>
+                <input type="number" class="inp-qtd" value="${qtdSel}" step="0.001" style="width:80px">
+                <button type="button" onclick="this.parentElement.remove()">X</button>
+            `;
+            container.appendChild(div);
+        }
+
+        async function salvarAlteracoes() {
+    const nome = document.getElementById('edit-nome').value;
+    const preco = document.getElementById('edit-preco').value;
+    const statusVal = document.getElementById('edit-status').value === "true";
+
+    const ingredientes = Array.from(document.querySelectorAll('#lista-ingredientes-edit div')).map(div => {
+        const id = div.querySelector('.sel-ing').value;
+        const qtd = div.querySelector('.inp-qtd').value;
+        return { id_item: id, quantidade: qtd };
+    });
+
+    if (!nome || !preco) {
+        alert("Nome e preço são obrigatórios!");
+        return;
+    }
+
+    const payload = {
+        id_produto: produtoId,
+        nome: nome,
+        preco: preco,
+        status: statusVal,
+        ingredientes: ingredientes
+    };
+
+    try {
+        const res = await fetch(API_EDIT, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json' // ESSA LINHA É OBRIGATÓRIA
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const resData = await res.json();
+        
+        if (resData.success) {
+            alert("✅ Produto atualizado com sucesso!");
+            window.location.href = "produtos.html";
+        } else {
+            alert("❌ Erro ao salvar: " + resData.error);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Falha de conexão com o servidor.");
+    }
+}
+    </script>
+</body>
+</html>

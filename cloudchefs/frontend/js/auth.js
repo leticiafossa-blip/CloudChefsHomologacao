@@ -1,21 +1,18 @@
-// CHAVE PARA O LOCALSTORAGE (o usuário logado)
+// CHAVE PARA O LOCALSTORAGE
 const LOGGED_USER_KEY = 'cloudchefs_logged_user';
 
-// ESTRUTURA DE PERMISSÕES (Usada para checagem)
+// 1. ADICIONADO 'Início' na lista de permissões para evitar o loop
 const PERMISSOES = {
-    GERENTE: { // O 'admin' do banco
-        nome: "Gerente",
-        acessos: ["Início", "Relatórios", "Novo Pedido", "Colaboradores", "Financeiro", "Atualização de estoque"]
+    'GERENTE': {
+        nome: 'Gerente',
+        acessos: ['Início', 'Relatórios', 'Novo Pedido', 'Colaboradores', 'Financeiro', 'Atualização de estoque', 'Produtos']
     },
-    ATENDENTE: { // O 'colaborador' do banco
-        nome: "Atendente",
-        acessos: ["Início", "Novo Pedido", "Atualização de estoque"]
+    'ATENDENTE': {
+        nome: 'Atendente',
+        acessos: ['Início', 'Novo Pedido']
     }
 };
 
-/**
- * Exibe uma mensagem de notificação global (toast).
- */
 function exibirMensagem(texto, tipo = 'alerta') {
     const container = document.getElementById('global-message-container');
     if (!container) return;
@@ -39,9 +36,6 @@ function exibirMensagem(texto, tipo = 'alerta') {
     }, 4500);
 }
 
-/**
- * Tenta fazer o login no BACKEND.
- */
 async function fazerLogin() {
     const loginInput = document.getElementById('login-usuario');
     const senhaInput = document.getElementById('senha-usuario');
@@ -55,20 +49,16 @@ async function fazerLogin() {
     }
 
     try {
-        // --- 🚀 CORREÇÃO APLICADA AQUI ---
-        // 1. Caminho relativo (correto)
-        // 2. Sintaxe do fetch() corrigida (aspas e parênteses)
         const resposta = await fetch("../backend/login.php", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ login: login, senha: senha })
         });
-        // --- FIM DA CORREÇÃO ---
 
         const data = await resposta.json();
 
-        if (data.success && data.usuario) {
-            localStorage.setItem(LOGGED_USER_KEY, JSON.stringify(data.usuario));
+        if (data.success && data.user) { // Note que mudei para data.user conforme o PHP anterior
+            localStorage.setItem(LOGGED_USER_KEY, JSON.stringify(data.user));
             window.location.href = 'monitoramento.html';
         } else {
             exibirMensagem(data.error || 'Usuário ou senha inválidos.', 'erro');
@@ -79,83 +69,61 @@ async function fazerLogin() {
     }
 }
 
-/**
- * Retorna o usuário logado do localStorage.
- */
 function getUsuarioLogado() {
     const usuarioSalvo = localStorage.getItem(LOGGED_USER_KEY);
     return usuarioSalvo ? JSON.parse(usuarioSalvo) : null;
 }
 
-/**
- * Remove o usuário logado e redireciona para o login.
- */
 function fazerLogout() {
     localStorage.removeItem(LOGGED_USER_KEY);
     window.location.href = 'login.html';
 }
 
-/**
- * Mapeia o 'tipo_usuario' (do banco) para o 'cargo' (do UI).
- */
+// 2. CORREÇÃO NO MAPEAMENTO: Agora aceita 'admin' ou 'GERENTE'
 function getCargoDoUsuario(tipo_usuario) {
-    if (tipo_usuario === 'admin') {
+    if (!tipo_usuario) return null;
+    const tipo = tipo_usuario.toUpperCase();
+    
+    if (tipo === 'ADMIN' || tipo === 'GERENTE') {
         return 'GERENTE';
     }
-    if (tipo_usuario === 'colaborador') {
+    if (tipo === 'COLABORADOR' || tipo === 'ATENDENTE') {
         return 'ATENDENTE';
     }
-    return null; // 'cliente' ou outros não têm cargo
+    return null;
 }
 
-/**
- * Verifica se o usuário logado tem permissão para acessar um recurso.
- */
 function verificarPermissao(recurso) {
     const usuario = getUsuarioLogado();
-    if (!usuario) {
-        return false;
-    }
+    if (!usuario) return false;
 
     const cargo = getCargoDoUsuario(usuario.tipo_usuario);
-    if (!cargo) {
-        return false;
-    }
+    if (!cargo || !PERMISSOES[cargo]) return false;
 
-    const permissaoUsuario = PERMISSOES[cargo];
-    if (!permissaoUsuario) {
-        return false;
-    }
-
-    return permissaoUsuario.acessos.includes(recurso);
+    return PERMISSOES[cargo].acessos.includes(recurso);
 }
 
-/**
- * Verifica o acesso a uma página e redireciona se não houver permissão.
- * ESTA É A FUNÇÃO QUE FOI CORRIGIDA.
- */
 function verificarAcessoPagina(nomePagina) {
-    const usuario = getUsuarioLogado(); // Pega o usuário uma vez
+    const usuario = getUsuarioLogado();
 
     if (!usuario) {
-        // 1. Se não está logado, vai para o login.
         window.location.href = 'login.html';
         return false;
     }
 
     if (!verificarPermissao(nomePagina)) {
-        // 2. Se ESTÁ LOGADO, mas não tem permissão para esta página...
-        exibirMensagem("Você não tem permissão para acessar esta página.", "erro");
-
-        // 3. 🔥 LOGA O USUÁRIO (quebra o loop)
-        localStorage.removeItem(LOGGED_USER_KEY);
-
-        // 4. Manda para o login.
-        setTimeout(() => {
+        console.error("Acesso negado para o recurso:", nomePagina);
+        // Em vez de remover o usuário e expulsar, vamos apenas avisar e travar
+        // Para evitar o loop infinito de expulsão
+        exibirMensagem("Sem permissão para: " + nomePagina, "erro");
+        
+        // Se estiver no monitoramento e não tiver acesso ao 'Início', aí sim desloga
+        if (nomePagina === 'Início') {
+            localStorage.removeItem(LOGGED_USER_KEY);
             window.location.href = 'login.html';
-        }, 100);
+        }
         return false;
     }
 
-    return true; // 5. Se passou em tudo, permite o acesso.
+    return true;
 }

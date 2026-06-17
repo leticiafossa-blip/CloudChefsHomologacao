@@ -1,71 +1,74 @@
 <?php
-// ---- INÍCIO DO BLOCO DE CORREÇÃO CORS (Obrigatório) ----
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Headers: Content-Type, Cache-Control");
-header("Access-Control-Allow-Methods: POST, GET, OPTIONS"); // Permite POST, GET e OPTIONS
+header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Content-Type: application/json; charset=utf-8");
 
-// Responde ao "preflight"
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-// ---- FIM DO BLOCO DE CORREÇÃO CORS ----
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit; }
 
-
-// ---- O SEU CÓDIGO ANTIGO COMEÇA A PARTIR DAQUI ----
 require 'connect.php';
 
-$data = json_decode(file_get_contents("php://input"), true);
-$acao = $data['acao'] ?? null;
+$method = $_SERVER['REQUEST_METHOD'];
 
 try {
-    if ($acao === "remover") {
-        $nome = $data['nome'];
-        $quantidade = $data['quantidade'];
-        $stmt = $db->prepare("UPDATE estoque SET quantidade_atual = quantidade_atual - :qtd WHERE nome_item = :nome AND quantidade_atual >= :qtd");
-        $stmt->execute([':qtd' => $quantidade, ':nome' => $nome]);
-
-    } else if ($acao === "adicionar") {
-        $nome = $data['nome'];
-        $quantidade = $data['quantidade'];
-        $stmt = $db->prepare("UPDATE estoque SET quantidade_atual = quantidade_atual + :qtd WHERE nome_item = :nome");
-        $stmt->execute([':qtd' => $quantidade, ':nome' => $nome]);
-
-    } else if ($acao === "criar") {
-        // --- 🚀 CORREÇÃO APLICADA ---
-        // Blocos duplicados removidos.
-        // 'quantidade_minima' removida.
-
-        $nome_item = $data['nome_item'];
-        $unidade_medida = $data['unidade_medida'];
-        $quantidade_atual = $data['quantidade_atual'] ?? 0; // Pega a qtd inicial do JS
-
-        $stmt = $db->prepare("
-            INSERT INTO estoque (nome_item, unidade_medida, quantidade_atual) 
-            VALUES (:nome, :unidade, :qtd_atual)
-        ");
-        $stmt->execute([
-            ':nome' => $nome_item,
-            ':unidade' => $unidade_medida,
-            ':qtd_atual' => $quantidade_atual // Salva a quantidade inicial
-        ]);
-
-        echo json_encode(["success" => true, "message" => "Ingrediente $nome_item adicionado."]);
-        exit(); // Sai aqui para não dar o 'success' duplicado
-        // --- FIM DA CORREÇÃO ---
-
-    } else {
-        throw new Exception("Ação desconhecida.");
+    // --- MÉTODO GET: LISTAR ESTOQUE ---
+    if ($method === 'GET') {
+        $stmt = $db->query("SELECT id_item, nome_item, quantidade_atual, unidade_medida FROM estoque ORDER BY nome_item ASC");
+        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        exit;
     }
 
-    echo json_encode(["success" => true]);
+    // --- MÉTODO POST: ATUALIZAR OU SALVAR ESTOQUE ---
+    if ($method === 'POST') {
+        $data = json_decode(file_get_contents("php://input"), true);
+
+        // Captura todas as variações possíveis que o JavaScript pode ter enviado
+        $id = $data['id_item'] ?? $data['id'] ?? null;
+        $qtd = $data['quantidade_atual'] ?? $data['quantidade'] ?? $data['qtd'] ?? null;
+        $nome = $data['nome_item'] ?? $data['nome'] ?? null;
+        $unidade = $data['unidade_medida'] ?? $data['unidade'] ?? 'un';
+
+        if ($qtd === null) {
+            echo json_encode(["success" => false, "error" => "Quantidade não informada."]);
+            exit;
+        }
+
+        // 🚀 A BLINDAGEM CONTRA O ERRO DE CHAVE DUPLICADA:
+        // Se o frontend passou um nome (ex: "Pao"), verificamos se ele já existe no RDS.
+        // Se já existir, interceptamos o ID dele e transformamos o INSERT em UPDATE na hora!
+        if (!empty($nome)) {
+            $stmtCheck = $db->prepare("SELECT id_item FROM estoque WHERE nome_item ILIKE ?");
+            $stmtCheck->execute([trim($nome)]);
+            $itemExistente = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+
+            if ($itemExistente) {
+                $id = $itemExistente['id_item']; // Força o ID do item que já existe
+            }
+        }
+
+        // EXECUÇÃO SEGURA
+        if ($id !== null && $id !== '') {
+            // Caso A: O item já existe (ou descobrimos o ID pelo nome), faz o UPDATE
+            $stmt = $db->prepare("UPDATE estoque SET quantidade_atual = :qtd WHERE id_item = :id");
+            $stmt->execute([':qtd' => $qtd, ':id' => $id]);
+            
+            echo json_encode(["success" => true, "message" => "Estoque atualizado com sucesso!"]);
+            exit;
+        } else if (!empty($nome)) {
+            // Caso B: É realmente um ingrediente novo, faz o INSERT
+            $stmt = $db->prepare("INSERT INTO estoque (nome_item, quantidade_atual, unidade_medida) VALUES (:nome, :qtd, :unidade)");
+            $stmt->execute([':nome' => $nome, ':qtd' => $qtd, ':unidade' => $unidade]);
+            
+            echo json_encode(["success" => true, "message" => "Novo item cadastrado com sucesso!"]);
+            exit;
+        }
+
+        echo json_encode(["success" => false, "error" => "Dados insuficientes para processar."]);
+        exit;
+    }
 
 } catch (Exception $e) {
-    if (strpos($e->getMessage(), 'duplicate key') !== false) {
-        echo json_encode(["success" => false, "error" => "Ingrediente já existe."]);
-    } else {
-        echo json_encode(["success" => false, "error" => $e->getMessage()]);
-    }
+    http_response_code(500);
+    echo json_encode(["success" => false, "error" => $e->getMessage()]);
 }
 ?>

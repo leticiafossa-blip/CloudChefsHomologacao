@@ -5,42 +5,145 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cloud Chefs - Monitoramento</title>
+    
     <link rel="stylesheet" href="css/monitoramento.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
     <style>
-        /* Estilos para impressão (oculta elementos não essenciais) */
-        @media print {
+        /* Cores e Fontes Padrão da Imagem */
+        :root {
+            --vermelho-cc: #a51c1c; 
+            --laranja-borda: #ffc107; 
+        }
 
-            .topo,
-            .coluna-esquerda,
-            .coluna-direita,
-            .btn-exportar,
-            .btn-adicionar-pedido,
-            .btn-excluir-pedido,
-            #global-message-container {
+        .titulo-coluna-central {
+            color: var(--vermelho-cc);
+            font-size: 2.2em;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .btn-adicionar-pedido {
+            background-color: var(--vermelho-cc);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* --- O CARD DE PEDIDO --- */
+        .pedido-card {
+            background: white;
+            border: 2px solid var(--laranja-borda);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden; 
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .pedido-header {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .info-cliente {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pedido-numero-nome {
+            color: var(--vermelho-cc);
+            font-weight: bold;
+            font-size: 1.2em;
+            margin: 0;
+        }
+
+        .pedido-hora {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .linha-pontilhada {
+            border: 0;
+            border-top: 1px dotted #ccc;
+            margin: 0 15px;
+        }
+
+        .pedido-itens {
+            list-style: none;
+            padding: 15px;
+            margin: 0;
+        }
+
+        .pedido-itens li {
+            margin-bottom: 8px;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #333;
+        }
+
+        .item-icone {
+            font-size: 1.3em;
+            width: 25px;
+            text-align: center;
+        }
+
+        .pedido-footer {
+            padding: 10px 15px;
+            background-color: #fcfcfc;
+            border-top: 1px solid #eee;
+            text-align: right;
+        }
+
+        .pedido-valor {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #333;
+        }
+
+        /* --- BOTÕES DE STATUS --- */
+        .status-btn {
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        .btn-acao-pronto {
+            background-color: #ffc107; 
+            color: #856404;
+        }
+        .btn-acao-pronto:hover { background-color: #e0a800; }
+
+        .btn-acao-concluir {
+            background-color: #28a745; 
+            color: white;
+        }
+        .btn-acao-concluir:hover { background-color: #218838; }
+
+        @media print {
+            .topo, .coluna-esquerda, .coluna-direita, .btn-exportar,
+            .btn-adicionar-pedido, #global-message-container {
                 display: none !important;
             }
-
-            body {
-                background-color: white;
-            }
-
-            .container {
-                padding: 0;
-                margin: 0;
-                display: block;
-            }
-
-            .coluna-central {
-                width: 100% !important;
-                max-width: 100% !important;
-                box-shadow: none;
-                border: none;
-            }
-
-            .header-coluna {
-                border-bottom: none;
-            }
+            body { background-color: white; }
+            .container { padding: 0; margin: 0; display: block; }
+            .coluna-central { width: 100% !important; max-width: 100% !important; box-shadow: none; border: none; }
         }
     </style>
 </head>
@@ -48,300 +151,237 @@
 <body onload="verificarAcesso('Início')">
     <header class="topo">
         <img src="img/logo.png" alt="Logo Cloud Chefs" class="logo-topo">
-        <h1>Monitoramento</h1>
+        <h1>Painel de Monitoramento</h1>
     </header>
 
     <div class="container">
         <div class="coluna-esquerda" id="sidebar-menu">
-            <a href="relatorio.html" data-acesso="Relatórios">
-                <button class="btn-esquerda">Relatórios</button>
-            </a>
-            <a href="pedidos.html" data-acesso="Novo Pedido">
-                <button class="btn-esquerda">Novo pedido</button>
-            </a>
-            <a href="colaboradores.html" data-acesso="Colaboradores">
-                <button class="btn-esquerda">Colaboradores</button>
-            </a>
-            <a href="financeiro.html" data-acesso="Financeiro">
-                <button class="btn-esquerda">Financeiro</button>
-            </a>
-            <a href="atualizacao_estoque.html" data-acesso="Atualização de estoque">
-                <button class="btn-esquerda">Atualização de estoque</button>
-            </a>
+            <a href="relatorio.html" data-acesso="Relatórios"><button class="btn-esquerda">Relatórios</button></a>
+            <a href="pedidos.html" data-acesso="Novo Pedido"><button class="btn-esquerda">Novo pedido</button></a>
+            <a href="produtos.html" data-acesso="Produtos"><button class="btn-esquerda">Gestão de Produtos</button></a>
+            <a href="colaboradores.html" data-acesso="Colaboradores"><button class="btn-esquerda">Colaboradores</button></a>
+            <a href="financeiro.html" data-acesso="Financeiro"><button class="btn-esquerda">Financeiro</button></a>
+            <a href="atualizacao_estoque.html" data-acesso="Atualização de estoque"><button class="btn-esquerda">Atualização de estoque</button></a>
             <button class="btn-esquerda" onclick="fazerLogout()">Sair</button>
         </div>
 
         <div class="coluna-central">
-            <div class="header-coluna">
-                <h2 class="titulo-coluna-central">Pedidos</h2>
-                <a href="pedidos.html">
-                    <button class="btn-adicionar-pedido"><span>+</span> Adicionar</button>
+            <div class="header-coluna" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="titulo-coluna-central">Fila de Produção</h2>
+                <a href="pedidos.html" class="btn-adicionar-pedido">
+                    <i class="fas fa-plus"></i> Adicionar
                 </a>
             </div>
 
             <div class="lista-pedidos" id="listaPedidosMonitoramento">
+                <p style="padding: 20px;">Sincronizando com a AWS...</p>
             </div>
 
-            <button class="btn-exportar" onclick="window.print()">EXPORTAR</button>
+            <button class="btn-exportar" onclick="window.print()">EXPORTAR RELATÓRIO</button>
         </div>
 
         <div class="coluna-direita">
-            <h2 class="titulo-coluna-direita">Estoque<span class="estoque-alerta" id="alertaEstoque">0</span></h2>
-
+            <h2 class="titulo-coluna-direita">Nível de Estoque <span class="estoque-alerta" id="alertaEstoque">0</span></h2>
             <div class="lista-estoque" id="listaEstoqueMonitoramento">
-            </div>
-        </div>
-    </div>
-
-    <div id="confirmacaoModal" class="modal-overlay">
-        <div class="modal-dialog">
-            <h3 class="modal-title">Confirmar Exclusão</h3>
-            <p id="modal-mensagem" class="modal-body"></p>
-            <div class="modal-actions">
-                <button class="btn-secundario" onclick="fecharConfirmacao(true)">CANCELAR</button>
-                <button class="btn-primario" id="btnConfirmarExclusao" onclick="finalizarExclusao()">EXCLUIR</button>
+                <p style="padding: 10px; font-size: 14px;">Carregando estoque...</p>
             </div>
         </div>
     </div>
 
     <div id="global-message-container"></div>
-    <script src="js/auth.js"></script>
-    <script src="js/pedidos.js"></script>
-    <script src="js/estoque.js"></script>
-    <script>
-        let pedidoParaExcluir = null;
 
-        // --- 🚀 CORREÇÃO DE SINTAXE APLICADA AQUI ---
+    <script src="js/auth.js"></script>
+    
+    <script>
+        const IP_VM = "3.144.118.111"; 
+        const BASE_URL = `http://${IP_VM}/Cloudchefs2026/cloudchefs/backend`;
+        let intervaloMonitoramento = null;
+
         function verificarAcesso(nomePagina) {
-            // --- FIM DA CORREÇÃO ---
-            verificarAcessoPagina(nomePagina);
-            filtrarMenuLateral();
-            carregarMonitoramento();
+            try {
+                if (typeof verificarAcessoPagina === 'function') {
+                    verificarAcessoPagina(nomePagina);
+                }
+                filtrarMenuLateral();
+                carregarMonitoramento();
+                
+                if (!intervaloMonitoramento) {
+                    intervaloMonitoramento = setInterval(carregarMonitoramento, 7000);
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function carregarMonitoramento() {
+            // Agora sim: puxa o estoque e os pedidos ao mesmo tempo usando nossas funções locais!
+            await carregarEstoqueMonitoramento();
+            await carregarPedidosMonitoramento();
+        }
+
+        // --- FUNÇÃO DE ESTOQUE DEVOLVIDA E BLINDADA ---
+        async function carregarEstoqueMonitoramento() {
+            const listaHtml = document.getElementById('listaEstoqueMonitoramento');
+            const alertaSpan = document.getElementById('alertaEstoque');
+            if (!listaHtml) return;
+
+            try {
+                const res = await fetch(`${BASE_URL}/estoque.php`);
+                const estoque = await res.json();
+
+                if (!Array.isArray(estoque)) return;
+
+                listaHtml.innerHTML = '';
+                let itensBaixo = 0;
+
+                estoque.forEach(item => {
+                    const quantidade = parseFloat(item.quantidade_atual || item.quantidade || 0);
+                    const nome = item.nome_item || item.nome || "Item";
+                    const unidade = item.unidade_medida || item.unidade || "";
+                    
+                    const classificacao = quantidade < 5 ? 'baixo' : (quantidade < 15 ? 'medio' : 'normal');
+
+                    if (classificacao === 'baixo' || classificacao === 'medio') {
+                        itensBaixo++;
+                    }
+
+                    const porcentagem = Math.min((quantidade / 50) * 100, 100);
+
+                    listaHtml.innerHTML += `
+                        <div class="estoque-item">
+                            <p class="nome-ingrediente">${nome}</p>
+                            <div class="barra-estoque-container">
+                                <div class="barra-estoque ${classificacao}" style="width: ${porcentagem}%;"></div>
+                                <span class="quantidade-estoque">${quantidade} ${unidade}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                if (alertaSpan) alertaSpan.textContent = itensBaixo;
+            } catch (err) {
+                console.error("Erro ao carregar estoque:", err);
+                listaHtml.innerHTML = '<p style="color:red; font-size:12px;">Falha ao ler estoque.</p>';
+            }
+        }
+
+        // --- FUNÇÃO AUXILIAR PARA EMOJIS ---
+        function getItemIcone(nomeItem) {
+            const nome = nomeItem.toLowerCase();
+            if (nome.match(/(burguer|mac|queijo|chicken|stacker)/)) return '🍔';
+            if (nome.includes('batata')) return '🍟';
+            if (nome.match(/(coca|guaraná|fanta|suco|refri|água)/)) return '🥤';
+            return '🍽️'; 
+        }
+
+        // --- FUNÇÃO DE PEDIDOS (COM VISUAL NOVO) ---
+        async function carregarPedidosMonitoramento() {
+            const listaHtml = document.getElementById('listaPedidosMonitoramento');
+            if (!listaHtml) return;
+
+            try {
+                const resposta = await fetch(`${BASE_URL}/listar_pedidos.php`);
+                const pedidos = await resposta.json();
+
+                if (pedidos && pedidos.error) {
+                    listaHtml.innerHTML = `<p style="color:red; padding:10px;">Erro AWS: ${pedidos.error}</p>`;
+                    return;
+                }
+
+                listaHtml.innerHTML = '';
+
+                if (!pedidos || pedidos.length === 0) {
+                    listaHtml.innerHTML = '<p class="sem-pedidos" style="padding:15px; color:#666;">Nenhum pedido na fila.</p>';
+                    return;
+                }
+
+                pedidos.forEach(pedido => {
+                    const id = pedido.id_pedido || pedido.id;
+                    const cliente = pedido.nome_cliente || 'Cliente';
+                    const valor = parseFloat(pedido.valor_total || 0).toFixed(2);
+                    const status = pedido.status || 'Pendente';
+
+                    if (status === 'Concluído') return;
+
+                    let horaFormatada = '--:--';
+                    if (pedido.data_pedido) {
+                        try {
+                            const stringData = pedido.data_pedido.replace(' ', 'T');
+                            const d = new Date(stringData);
+                            if (!isNaN(d.getTime())) {
+                                horaFormatada = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                            }
+                        } catch(e) {}
+                    }
+
+                    const itensArray = pedido.itens || [];
+                    const itensHtml = itensArray.map(item => {
+                        const icone = getItemIcone(item.nome_produto || item.nome || '');
+                        return `<li><span class="item-icone">${icone}</span> ${item.quantidade || 1}x ${item.nome_produto || 'Item'}</li>`;
+                    }).join('');
+
+                    listaHtml.innerHTML += `
+                        <div class="pedido-card">
+                            <div class="pedido-header">
+                                <div class="info-cliente">
+                                    <p class="pedido-numero-nome">Nº${String(id).padStart(5, '0')} - ${cliente}</p>
+                                    <span class="pedido-hora">${horaFormatada}</span>
+                                </div>
+                                <div class="pedido-acoes">
+                                    ${status === 'Pendente' ? 
+                                        `<button class="status-btn btn-acao-pronto" onclick="atualizarStatusPedido(${id}, 'Pronto')">
+                                            <i class="fas fa-hamburger"></i> PRONTO
+                                        </button>` : 
+                                        `<button class="status-btn btn-acao-concluir" onclick="atualizarStatusPedido(${id}, 'Concluído')">
+                                            <i class="fas fa-check-circle"></i> CONCLUIR
+                                        </button>`
+                                    }
+                                </div>
+                            </div>
+                            <hr class="linha-pontilhada">
+                            <ul class="pedido-itens">
+                                ${itensHtml}
+                            </ul>
+                            <div class="pedido-footer">
+                                <span class="pedido-valor">Total: R$ ${valor.replace('.', ',')}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                console.error("Erro ao carregar pedidos:", err);
+                listaHtml.innerHTML = '<p style="padding:15px; color:red;">Falha de conexão com a AWS.</p>';
+            }
+        }
+
+        async function atualizarStatusPedido(id, statusParaEnviar) {
+            try {
+                const res = await fetch(`${BASE_URL}/atualizar_status.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        id_pedido: id, 
+                        novo_status: statusParaEnviar 
+                    })
+                });
+                
+                const data = await res.json();
+                if (data.success) {
+                    carregarMonitoramento(); 
+                }
+            } catch (err) {
+                alert("Falha ao comunicar com a AWS.");
+            }
         }
 
         function filtrarMenuLateral() {
             const menu = document.getElementById('sidebar-menu');
+            if (!menu) return;
             const links = menu.querySelectorAll('a[data-acesso]');
-
             links.forEach(link => {
                 const recurso = link.getAttribute('data-acesso');
-                if (!verificarPermissao(recurso)) {
-                    link.style.display = 'none';
-                } else {
-                    link.style.display = 'block';
+                if (typeof verificarPermissao === 'function') {
+                    link.style.display = verificarPermissao(recurso) ? 'block' : 'none';
                 }
             });
-        }
-
-        async function carregarEstoqueMonitoramento() {
-            const estoque = await carregarEstoque();
-            const listaHtml = document.getElementById('listaEstoqueMonitoramento');
-            const alertaSpan = document.getElementById('alertaEstoque');
-
-            listaHtml.innerHTML = '';
-            let itensBaixo = 0;
-
-            estoque.forEach(item => {
-                const quantidade = parseInt(item.quantidade_atual) || 0;
-                const porcentagem = Math.min(quantidade, 100);
-                const classificacao = getClassificacaoEstoque(quantidade);
-
-                if (classificacao === 'baixo' || classificacao === 'medio') {
-                    itensBaixo++;
-                }
-
-                const barraHtml = `
-                <div class="estoque-item">
-                    <p class="nome-ingrediente">${item.nome_item}</p>
-                    <div class="barra-estoque-container">
-                        <div class="barra-estoque ${classificacao}" style="width: ${porcentagem}%;"></div>
-                        <span class="quantidade-estoque">${quantidade}</span>
-                    </div>
-                </div>
-            `;
-                listaHtml.innerHTML += barraHtml;
-            });
-
-            alertaSpan.textContent = itensBaixo;
-        }
-
-        async function atualizarStatus(idPedido, novoStatus) {
-            const selectElement = document.querySelector(`.pedido-item[data-id="${idPedido}"] .status-select`);
-            if (selectElement) {
-                selectElement.dataset.status = novoStatus;
-            }
-
-            try {
-                const resposta = await fetch("../backend/atualizar_status.php", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ id_pedido: idPedido, novo_status: novoStatus })
-                });
-                const data = await resposta.json();
-
-                if (data.success) {
-                    // Mensagem de sucesso removida
-
-                    if (novoStatus === 'Concluído') {
-                        const pedidoElement = document.querySelector(`.pedido-item[data-id="${idPedido}"]`);
-                        if (pedidoElement) {
-                            pedidoElement.style.transition = 'opacity 0.5s, transform 0.5s';
-                            pedidoElement.style.opacity = 0;
-                            pedidoElement.style.transform = 'translateX(-100px)';
-                            setTimeout(() => pedidoElement.remove(), 500);
-                        }
-                    }
-                } else {
-                    exibirMensagem(`Erro ao atualizar status: ${data.error}`, "erro");
-                }
-            } catch (err) {
-                console.error("Erro ao atualizar status:", err);
-                exibirMensagem("Falha na comunicação ao atualizar status.", "erro");
-            }
-        }
-
-        async function carregarPedidosMonitoramento() {
-            const listaHtml = document.getElementById('listaPedidosMonitoramento');
-            listaHtml.innerHTML = "<p>🔄 Carregando pedidos pendentes...</p>";
-
-            let resposta;
-            let respostaClonada;
-
-            try {
-                resposta = await fetch("../backend/listar_pedidos.php", {
-                    cache: "no-cache"
-                });
-                respostaClonada = resposta.clone();
-
-                if (!resposta.ok) {
-                    throw new Error(`Erro HTTP: ${resposta.status}`);
-                }
-
-                const pedidos = await resposta.json();
-                listaHtml.innerHTML = "";
-
-                if (!Array.isArray(pedidos) || pedidos.length === 0) {
-                    listaHtml.innerHTML = "<p>Nenhum pedido pendente ou em preparo no momento.</p>";
-                    return;
-                }
-
-                console.log("✅ Pedidos carregados (com itens):", pedidos);
-
-                pedidos.forEach(pedido => {
-
-                    let itensHtml = '';
-                    if (pedido.itens && Array.isArray(pedido.itens)) {
-                        itensHtml = pedido.itens.map(item => {
-                            return `<p class="item-pedido">${item.quantidade}x ${item.nome_produto}</p>`;
-                        }).join('');
-                    } else {
-                        itensHtml = "<p>Itens não carregados.</p>";
-                    }
-
-                    const statusOptions = ['Pendente', 'Em Preparo', 'Concluído'];
-                    let statusHtml = `<select class="status-select" data-status="${pedido.status}" onchange="atualizarStatus(${pedido.id_pedido}, this.value)">`;
-
-                    statusOptions.forEach(opt => {
-                        const selecionado = (opt === pedido.status) ? 'selected' : '';
-                        statusHtml += `<option value="${opt}" ${selecionado}>${opt}</option>`;
-                    });
-                    statusHtml += '</select>';
-
-                    const pedidoHtml = `
-                <div class="pedido-item" data-id="${pedido.id_pedido}">
-                    <div class="pedido-header">
-                        <h3 class="nome-cliente">Nº${String(pedido.id_pedido).padStart(5, '0')} - ${pedido.nome_cliente}</h3>
-                        <button class="btn-excluir-pedido" onclick="confirmarExclusao('${pedido.id_pedido}')">
-                            <i class="fas fa-trash-alt"></i> Excluir
-                        </button>
-                    </div>
-                    <div class="pedido-itens-lista">
-                        ${itensHtml}
-                    </div>
-                    <div class="pedido-status-container">
-                        ${statusHtml}
-                    </div>
-                </div>
-                `;
-                    listaHtml.innerHTML += pedidoHtml;
-                });
-
-            } catch (err) {
-                console.error("❌ Falha ao processar JSON:", err);
-                try {
-                    const textoDoErro = await respostaClonada.text();
-                    console.error("🚨 RESPOSTA DO SERVIDOR (PROVÁVEL ERRO PHP):", textoDoErro);
-                    listaHtml.innerHTML = `<p style='color:red;'>Falha ao ler JSON. Verifique o console (F12).</p><pre>${textoDoErro}</pre>`;
-                } catch (e2) {
-                    console.error("Erro ao tentar ler a resposta como texto:", e2);
-                    listaHtml.innerHTML = "<p style='color:red;'>Erro crítico. Verifique o console (F12).</p>";
-                }
-            }
-        }
-
-        function mostrarConfirmacao(numPedido) {
-            pedidoParaExcluir = numPedido;
-            const modal = document.getElementById('confirmacaoModal');
-            const mensagem = document.getElementById('modal-mensagem');
-            mensagem.innerHTML = `Tem certeza que deseja excluir o <strong>Nº${numPedido}</strong>? Esta ação é irreversível.`;
-            modal.style.display = 'flex';
-        }
-
-        function fecharConfirmacao(isCancel) {
-            document.getElementById('confirmacaoModal').style.display = 'none';
-            if (isCancel) {
-                pedidoParaExcluir = null;
-            }
-        }
-
-        async function finalizarExclusao() {
-            if (!pedidoParaExcluir) {
-                fecharConfirmacao(true);
-                return;
-            }
-
-            const idParaExcluir = pedidoParaExcluir;
-            const pedidoElement = document.querySelector(`.pedido-item[data-id="${idParaExcluir}"]`);
-
-            try {
-                const resposta = await fetch("../backend/excluir_pedido.php", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ id_pedido: idParaExcluir })
-                });
-                const data = await resposta.json();
-
-                if (data.success) {
-                    exibirMensagem(`Pedido Nº${idParaExcluir} excluído do banco!`, 'sucesso');
-
-                    if (pedidoElement) {
-                        pedidoElement.style.transition = 'opacity 0.5s, transform 0.5s';
-                        pedidoElement.style.opacity = 0;
-                        pedidoElement.style.transform = 'translateX(-100px)';
-                        setTimeout(() => pedidoElement.remove(), 500);
-                    }
-                } else {
-                    exibirMensagem(`Erro ao excluir: ${data.error}`, "erro");
-                }
-
-            } catch (err) {
-                console.error("Falha na conexão ao excluir:", err);
-                exibirMensagem("Falha de rede ao tentar excluir.", "erro");
-            } finally {
-                pedidoParaExcluir = null;
-                fecharConfirmacao(false);
-            }
-        }
-
-        function confirmarExclusao(numPedido) {
-            mostrarConfirmacao(numPedido);
-        }
-
-        function carregarMonitoramento() {
-            carregarEstoqueMonitoramento();
-            carregarPedidosMonitoramento();
         }
     </script>
 </body>
-
 </html>
