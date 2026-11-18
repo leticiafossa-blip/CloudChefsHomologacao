@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Chefs</title>
+    <link rel="icon" href="img/logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+    <main class="conteudo">
+        <div class="cabecalho-pagina">
+            <div>
+                <h2>Pix com Mercado Pago</h2>
+                <p>As credenciais ficam só no servidor; o navegador nunca recebe o Access Token completo.</p>
+            </div>
+        </div>
+
+        <div class="grade-fila">
+            <section class="cartao">
+                <h3>Credenciais</h3>
+                <form id="form-mp" novalidate>
+                    <div class="linha-campos">
+                        <div class="campo">
+                            <label for="ambiente">Ambiente</label>
+                            <select id="ambiente">
+                                <option value="teste">Teste</option>
+                                <option value="producao">Produção</option>
+                            </select>
+                        </div>
+                        <div class="campo">
+                            <label for="public-key">Public Key</label>
+                            <input id="public-key" placeholder="APP_USR-... ou TEST-...">
+                        </div>
+                    </div>
+                    <div class="campo">
+                        <label for="access-token">Access Token</label>
+                        <input id="access-token" type="password" autocomplete="off" placeholder="Deixe em branco para manter o atual">
+                        <small id="token-atual"></small>
+                    </div>
+                    <div class="campo">
+                        <label for="webhook-url">URL do webhook (notificações)</label>
+                        <input id="webhook-url" placeholder="">
+                        <small>Deixe em branco para usar o endereço deste site, mostrado acima como exemplo.</small>
+                    </div>
+                    <div class="campo">
+                        <label for="webhook-secret">Assinatura secreta do webhook</label>
+                        <input id="webhook-secret" type="password" autocomplete="off" placeholder="Deixe em branco para manter a atual">
+                        <small id="secret-atual"></small>
+                    </div>
+                    <div class="acoes">
+                        <button type="submit" class="btn btn-primario" id="btn-salvar"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
+                        <button type="button" class="btn btn-secundario" id="btn-testar" onclick="testar(this)"><i class="fa-solid fa-plug"></i> Testar conexão</button>
+                        <button type="button" class="btn btn-perigo oculto" id="btn-desativar" onclick="desativar(this)">Desativar</button>
+                    </div>
+                </form>
+            </section>
+
+            <aside class="cartao">
+                <h3>Situação</h3>
+                <p id="situacao" class="carregando">Verificando...</p>
+                <div class="aviso-demo">
+                    <b>Sem credenciais = modo demonstração.</b> Enquanto o Mercado Pago não estiver configurado,
+                    o pedido Pix mostra um botão para <em>simular</em> o pagamento. Ótimo para apresentar o fluxo sem dinheiro real.
+                </div>
+                <p class="suave" style="font-size:.85rem">
+                    Para testar com Pix de verdade, crie uma aplicação em
+                    <a href="https://www.mercadopago.com.br/developers/panel/app" target="_blank" rel="noopener">Mercado Pago Developers</a>
+                    e cole aqui o Access Token de <b>teste</b>.
+                </p>
+            </aside>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        async function carregar() {
+            const c = await api('mp_config.php');
+            document.getElementById('ambiente').value = c.ambiente;
+            document.getElementById('public-key').value = c.public_key;
+            document.getElementById('webhook-url').value = c.webhook_url;
+            document.getElementById('webhook-url').placeholder = c.webhook_url_sugerida;
+            document.getElementById('token-atual').textContent = c.configurado ? `Token salvo: ${c.access_token_mascarado}` : 'Nenhum token salvo.';
+            document.getElementById('secret-atual').textContent = c.possui_webhook_secret ? 'Assinatura já salva.' : 'Opcional, mas recomendado em produção.';
+            document.getElementById('btn-desativar').classList.toggle('oculto', !c.configurado);
+            document.getElementById('btn-testar').disabled = !c.configurado;
+            const situacao = document.getElementById('situacao');
+            situacao.className = '';
+            situacao.innerHTML = c.configurado
+                ? `<span class="badge badge-ok">Configurado</span> ambiente de <b>${c.ambiente === 'producao' ? 'produção' : 'teste'}</b>`
+                : '<span class="badge badge-alerta">Modo demonstração</span>';
+        }
+
+        async function testar(botao) {
+            await comBotao(botao, async () => {
+                try {
+                    const r = await api('mp_testar.php');
+                    exibirMensagem(`Conexão OK! Conta: ${r.nickname || 'Mercado Pago'}`, 'sucesso');
+                } catch (e) { exibirMensagem(e.message, 'erro'); }
+            });
+        }
+
+        async function desativar(botao) {
+            if (!confirm('Desativar o Mercado Pago? O Pix volta para o modo demonstração.')) return;
+            await comBotao(botao, async () => {
+                try {
+                    await api('mp_config.php', { metodo: 'DELETE', dados: {} });
+                    exibirMensagem('Mercado Pago desativado.', 'alerta');
+                    await carregar();
+                } catch (e) { exibirMensagem(e.message, 'erro'); }
+            });
+        }
+
+        document.getElementById('form-mp').addEventListener('submit', async e => {
+            e.preventDefault();
+            const dados = {
+                ambiente: document.getElementById('ambiente').value,
+                public_key: document.getElementById('public-key').value.trim(),
+                access_token: document.getElementById('access-token').value.trim(),
+                webhook_url: document.getElementById('webhook-url').value.trim(),
+                webhook_secret: document.getElementById('webhook-secret').value.trim(),
+            };
+            await comBotao(document.getElementById('btn-salvar'), async () => {
+                try {
+                    await api('mp_config.php', { metodo: 'POST', dados });
+                    document.getElementById('access-token').value = '';
+                    document.getElementById('webhook-secret').value = '';
+                    exibirMensagem('Configuração salva!', 'sucesso');
+                    await carregar();
+                } catch (err) { exibirMensagem(err.message, 'erro'); }
+            });
+        });
+
+        iniciarPagina({ id: 'mercado-pago', titulo: 'Mercado Pago', somenteGerente: true })
+            .then(carregar)
+            .catch(e => { if (e.message !== 'Sessão expirada.') exibirMensagem(e.message, 'erro'); });
+    </script>
+</body>
+</html>

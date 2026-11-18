@@ -3,29 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Chefs - Login</title>
-    <link rel="stylesheet" href="css/login.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>Entrar · Cloud Chefs</title>
+    <link rel="icon" href="img/logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-    <div class="container">
-        <img src="img/logo.png" alt="Cloud Chefs" class="logo">
+    <div class="tela-login">
+        <form class="caixa-login" id="form-login" novalidate>
+            <img src="img/logo.png" alt="Logo Cloud Chefs">
+            <h1>Bem-vindo!</h1>
+            <p>Entre com seu usuário para acessar o sistema.</p>
 
-        <input type="text" id="login-usuario" placeholder="Login" class="input">
-        <input type="password" id="senha-usuario" placeholder="Senha" class="input">
-        
-        <button class="btn" onclick="fazerLogin()">ENTRAR</button>
+            <div class="campo">
+                <label for="login">Usuário</label>
+                <input type="text" id="login" autocomplete="username" autocapitalize="none" required autofocus>
+            </div>
+            <div class="campo">
+                <label for="senha">Senha</label>
+                <input type="password" id="senha" autocomplete="current-password" required>
+            </div>
 
-        <a href="esqueceusenha.html" class="link">ESQUECEU A SENHA</a>
+            <button type="submit" class="btn btn-primario btn-bloco btn-grande" id="btn-entrar">ENTRAR</button>
+            <a href="esqueceusenha.html" class="link">Esqueceu a senha?</a>
+        </form>
     </div>
-    
-    <div id="global-message-container"></div>
-    <script src="js/auth.js"></script>
+
+    <script src="js/app.js"></script>
     <script>
-        // Se já estiver logado, redireciona para monitoramento
-        if (getUsuarioLogado()) {
-            window.location.href = 'monitoramento.html';
-        }
+        const destino = () => {
+            const voltar = new URLSearchParams(location.search).get('voltar') || '';
+            // Só aceita páginas do próprio sistema (evita redirecionar para outro site).
+            return /^[a-z_]+\.html(\?[\w=&%-]*)?$/.test(voltar) ? voltar : 'monitoramento.html';
+        };
+
+        // Se já existe sessão válida, vai direto para o sistema.
+        api('me.php').then(() => location.replace(destino())).catch(() => {});
+
+        document.getElementById('form-login').addEventListener('submit', async (evento) => {
+            evento.preventDefault();
+            const login = document.getElementById('login').value.trim();
+            const senha = document.getElementById('senha').value;
+            if (!login || !senha) {
+                exibirMensagem('Informe o usuário e a senha.', 'alerta');
+                return;
+            }
+            await comBotao(document.getElementById('btn-entrar'), async () => {
+                try {
+                    await api('login.php', { metodo: 'POST', dados: { login, senha } });
+                    location.replace(destino());
+                } catch (e) {
+                    exibirMensagem(e.message, 'erro');
+                    document.getElementById('senha').select();
+                }
+            });
+        });
     </script>
 </body>
 </html>

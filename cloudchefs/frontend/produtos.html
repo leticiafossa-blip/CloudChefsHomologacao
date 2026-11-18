@@ -3,107 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Chefs - Gestão de Produtos</title>
-    <link rel="stylesheet" href="css/colaboradores.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 0.85em; font-weight: bold; cursor: pointer; border: none; }
-        .status-ativo { background-color: #d4edda; color: #155724; }
-        .status-inativo { background-color: #f8d7da; color: #721c24; }
-        .btn-editar-tabela { background: none; border: none; color: #007bff; cursor: pointer; font-size: 1.1em; margin-right: 10px; }
-    </style>
+    <title>Cloud Chefs</title>
+    <link rel="icon" href="img/logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/app.css">
 </head>
-<body onload="inicializarLista()">
-    <header class="topo">
-        <a href="monitoramento.html" class="btn-voltar-topo">← Voltar</a>
-        <img src="img/logo.png" alt="Logo Cloud Chefs" class="logo-topo">
-        <h1>Gestão de Cardápio</h1>
-    </header>
-
-    <div class="container">
-        <div class="secao-topo-lista" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2>Produtos Cadastrados</h2>
-            <a href="produtos_cadastro.html" class="btn-cadastrar" style="width: auto; padding: 10px 20px; text-decoration: none;">
-                <i class="fas fa-plus"></i> NOVO PRODUTO
-            </a>
+<body>
+    <main class="conteudo">
+        <div class="cabecalho-pagina">
+            <div>
+                <h2>Produtos do cardápio</h2>
+                <p>Produtos inativos não aparecem na tela de novo pedido.</p>
+            </div>
+            <a href="produto.html" class="btn btn-primario"><i class="fa-solid fa-plus"></i> Novo produto</a>
         </div>
 
-        <table class="tabela-colaboradores">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Produto</th>
-                    <th>Preço</th>
-                    <th>Status</th>
-                    <th style="text-align: center;">Ações</th>
-                </tr>
-            </thead>
-            <tbody id="tabela-produtos-body">
-                </tbody>
-        </table>
+        <section class="cartao">
+            <div class="tabela-container">
+                <table class="tabela">
+                    <thead>
+                        <tr><th></th><th>Produto</th><th>Categoria</th><th class="num">Preço</th><th>Situação</th><th></th></tr>
+                    </thead>
+                    <tbody id="lista"><tr><td colspan="6" class="carregando">Carregando...</td></tr></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
 
-        <a href="monitoramento.html" class="btn-voltar-inferior">VOLTAR</a>
-    </div>
-
-    <div id="global-message-container"></div>
-
-    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
     <script>
-        // Use o IP NOVO da sua VM
-        const API_PRODUTOS = "http://3.144.118.111/Cloudchefs2026/cloudchefs/backend/produtos.php";
+        const NOMES_CATEGORIA = { lanche: 'Lanche', acompanhamento: 'Acompanhamento', bebida: 'Bebida' };
 
-        async function inicializarLista() {
-            // Verifica permissão no auth.js
-            if (typeof verificarAcessoPagina === 'function') {
-                if (!verificarAcessoPagina('Produtos')) return;
-            }
-            carregarProdutos();
-        }
-
-        async function carregarProdutos() {
-            const tabelaBody = document.getElementById('tabela-produtos-body');
-            tabelaBody.innerHTML = '<tr><td colspan="5">Carregando cardápio...</td></tr>';
-
+        async function carregar() {
+            const corpo = document.getElementById('lista');
             try {
-                const res = await fetch(API_PRODUTOS);
-                const dados = await res.json();
-
-                // Se o PHP retornar erro em vez de lista, exibe o erro
-                if (dados.error) {
-                    tabelaBody.innerHTML = `<tr><td colspan="5" style="color:red">Erro no Banco: ${dados.error}</td></tr>`;
-                    return;
-                }
-
-                tabelaBody.innerHTML = '';
-
-                if (dados.length === 0) {
-                    tabelaBody.innerHTML = '<tr><td colspan="5">Nenhum produto ativo encontrado.</td></tr>';
-                    return;
-                }
-
-                dados.forEach(p => {
-    const row = tabelaBody.insertRow();
-    const estaAtivo = (p.status === true || p.status === 't' || p.status === 1);
-    const statusClass = estaAtivo ? 'status-ativo' : 'status-inativo';
-    const statusTexto = estaAtivo ? 'Ativo' : 'Inativo';
-
-    row.innerHTML = `
-        <td>${p.id_produto}</td>
-        <td><strong>${p.nome}</strong></td>
-        <td>R$ ${parseFloat(p.preco).toFixed(2)}</td>
-        <td><span class="status-badge ${statusClass}">${statusTexto}</span></td>
-        <td style="text-align: center;">
-            <button class="btn-editar-tabela" onclick="window.location.href='produtos_editar.html?id=${p.id_produto}'">
-                <i class="fas fa-edit"></i> EDITAR
-            </button>
-        </td>
-    `;
-});
-            } catch (err) {
-                console.error(err);
-                tabelaBody.innerHTML = '<tr><td colspan="5" style="color:red">Erro crítico de conexão com a AWS. Verifique o console (F12).</td></tr>';
+                const { produtos } = await api('produtos.php?todos=1');
+                corpo.innerHTML = produtos.map(p => `
+                    <tr>
+                        <td style="width:60px">${p.imagem ? `<img class="miniatura" src="${esc(p.imagem)}" alt="">` : `<span style="font-size:28px">${iconeProduto(p.categoria)}</span>`}</td>
+                        <td><b>${esc(p.nome)}</b></td>
+                        <td>${NOMES_CATEGORIA[p.categoria] || esc(p.categoria)}</td>
+                        <td class="num">${moeda(p.preco)}</td>
+                        <td><span class="badge ${p.status ? 'badge-ok' : 'badge-neutro'}">${p.status ? 'No cardápio' : 'Inativo'}</span></td>
+                        <td class="num"><a class="btn btn-secundario btn-pequeno" href="produto.html?id=${p.id_produto}"><i class="fa-solid fa-pen"></i> Editar</a></td>
+                    </tr>`).join('') || '<tr><td colspan="6" class="vazio">Nenhum produto cadastrado.</td></tr>';
+            } catch (e) {
+                corpo.innerHTML = `<tr><td colspan="6" class="vazio">${esc(e.message)}</td></tr>`;
             }
         }
+
+        iniciarPagina({ id: 'produtos', titulo: 'Produtos', somenteGerente: true }).then(carregar).catch(() => {});
     </script>
 </body>
 </html>

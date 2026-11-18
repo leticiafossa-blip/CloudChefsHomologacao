@@ -3,53 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Chefs - Gestão de Colaboradores</title>
-    <link rel="stylesheet" href="css/colaboradores.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>Cloud Chefs</title>
+    <link rel="icon" href="img/logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-    <header class="topo">
-        <a href="monitoramento.html" class="btn-voltar-topo">← Voltar</a>
-        <h1>Gestão de Colaboradores</h1>
-    </header>
-
-    <div class="container">
-        <div class="secao-cadastro">
-            <h2>Cadastrar Novo Colaborador</h2>
-            <div class="input-group">
-                <label>Nome Completo:</label>
-                <input type="text" id="nome" class="input-text" placeholder="Ex: Mateus Vargas">
+    <main class="conteudo">
+        <div class="cabecalho-pagina">
+            <div>
+                <h2>Colaboradores</h2>
+                <p>Gerentes acessam tudo. Atendentes fazem pedidos e acompanham a fila.</p>
             </div>
-            <div class="input-group">
-                <label>Login (Usuário):</label>
-                <input type="text" id="login" class="input-text" placeholder="Ex: mateus">
-            </div>
-            <div class="input-group">
-                <label>Senha:</label>
-                <input type="password" id="senha" class="input-text">
-            </div>
-            <button class="btn-cadastrar" onclick="cadastrarColaborador()">CADASTRAR NO BANCO</button>
         </div>
 
-        <div class="secao-lista">
-            <h2>Usuários Cadastrados</h2>
-            <table class="tabela-colaboradores">
-                <thead>
+        <div class="grade-fila">
+            <section class="cartao">
+                <h3>Usuários cadastrados</h3>
+                <div class="tabela-container">
+                    <table class="tabela">
+                        <thead><tr><th>Nome</th><th>Login</th><th>Perfil</th><th></th></tr></thead>
+                        <tbody id="lista"><tr><td colspan="4" class="carregando">Carregando...</td></tr></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="cartao">
+                <h3><i class="fa-solid fa-user-plus"></i> Novo colaborador</h3>
+                <form id="form-novo" novalidate>
+                    <div class="campo"><label for="nome">Nome completo</label><input id="nome" maxlength="120" required placeholder="Ex.: Mateus Vargas"></div>
+                    <div class="campo">
+                        <label for="login">Login</label>
+                        <input id="login" maxlength="60" required autocapitalize="none" placeholder="Ex.: mateus">
+                        <small>Letras minúsculas, números, ponto ou hífen.</small>
+                    </div>
+                    <div class="campo"><label for="senha">Senha</label><input id="senha" type="password" minlength="6" required autocomplete="new-password"><small>Mínimo de 6 caracteres.</small></div>
+                    <div class="campo">
+                        <label for="perfil">Perfil</label>
+                        <select id="perfil">
+                            <option value="ATENDENTE">Atendente</option>
+                            <option value="GERENTE">Gerente</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primario btn-bloco" id="btn-cadastrar">Cadastrar</button>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        let usuarios = [];
+        const porId = id => usuarios.find(u => u.id_usuario === id);
+
+        async function carregar() {
+            const corpo = document.getElementById('lista');
+            try {
+                ({ usuarios } = await api('usuarios.php'));
+                corpo.innerHTML = usuarios.map(u => `
                     <tr>
-                        <th>Nome</th>
-                        <th>Login</th>
-                        <th>Permissão</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tabela-body">
-                    </tbody>
-            </table>
-        </div>
-        <a href="monitoramento.html" class="btn-voltar-inferior">VOLTAR</a>
-    </div>
+                        <td><b>${esc(u.nome)}</b>${u.sou_eu ? ' <span class="badge badge-neutro">você</span>' : ''}</td>
+                        <td>${esc(u.login)}</td>
+                        <td>
+                            <select class="entrada" style="padding:6px 8px;width:auto" ${u.sou_eu ? 'disabled' : ''}
+                                    onchange="mudarPerfil(${u.id_usuario}, this)" aria-label="Perfil de ${esc(u.nome)}">
+                                <option value="ATENDENTE" ${u.tipo_usuario === 'ATENDENTE' ? 'selected' : ''}>Atendente</option>
+                                <option value="GERENTE" ${u.tipo_usuario === 'GERENTE' ? 'selected' : ''}>Gerente</option>
+                            </select>
+                        </td>
+                        <td class="num">
+                            <div class="acoes" style="justify-content:flex-end">
+                                <button class="btn btn-secundario btn-pequeno" onclick="novaSenha(${u.id_usuario})"><i class="fa-solid fa-key"></i> Nova senha</button>
+                                ${u.sou_eu ? '' : `<button class="btn btn-perigo btn-pequeno" onclick="excluir(${u.id_usuario})" title="Excluir"><i class="fa-solid fa-trash"></i></button>`}
+                            </div>
+                        </td>
+                    </tr>`).join('');
+            } catch (e) {
+                corpo.innerHTML = `<tr><td colspan="4" class="vazio">${esc(e.message)}</td></tr>`;
+            }
+        }
 
-    <script src="js/auth.js"></script> 
-    <script src="js/colaboradores.js?v=1.5"></script>
+        async function mudarPerfil(id, select) {
+            try {
+                await api('usuarios.php', { metodo: 'PUT', dados: { id_usuario: id, tipo_usuario: select.value } });
+                exibirMensagem('Perfil atualizado.', 'sucesso');
+            } catch (e) {
+                exibirMensagem(e.message, 'erro');
+                carregar();
+            }
+        }
+
+        async function novaSenha(id) {
+            const login = porId(id).login;
+            const senha = prompt(`Nova senha para "${login}" (mínimo de 6 caracteres):`);
+            if (senha === null) return;
+            try {
+                await api('usuarios.php', { metodo: 'PUT', dados: { id_usuario: id, senha } });
+                exibirMensagem(`Senha de "${login}" alterada.`, 'sucesso');
+            } catch (e) { exibirMensagem(e.message, 'erro'); }
+        }
+
+        async function excluir(id) {
+            const nome = porId(id).nome;
+            if (!confirm(`Excluir o usuário "${nome}"?`)) return;
+            try {
+                await api('usuarios.php', { metodo: 'DELETE', dados: { id_usuario: id } });
+                exibirMensagem('Usuário excluído.', 'sucesso');
+                carregar();
+            } catch (e) { exibirMensagem(e.message, 'erro'); }
+        }
+
+        document.getElementById('form-novo').addEventListener('submit', async e => {
+            e.preventDefault();
+            const dados = {
+                nome: document.getElementById('nome').value.trim(),
+                login: document.getElementById('login').value.trim().toLowerCase(),
+                senha: document.getElementById('senha').value,
+                tipo_usuario: document.getElementById('perfil').value,
+            };
+            if (!dados.nome || !dados.login || dados.senha.length < 6) {
+                exibirMensagem('Preencha nome, login e uma senha com pelo menos 6 caracteres.', 'alerta');
+                return;
+            }
+            await comBotao(document.getElementById('btn-cadastrar'), async () => {
+                try {
+                    await api('usuarios.php', { metodo: 'POST', dados });
+                    exibirMensagem(`${dados.nome} cadastrado!`, 'sucesso');
+                    e.target.reset();
+                    carregar();
+                } catch (err) { exibirMensagem(err.message, 'erro'); }
+            });
+        });
+
+        iniciarPagina({ id: 'colaboradores', titulo: 'Colaboradores', somenteGerente: true }).then(carregar).catch(() => {});
+    </script>
 </body>
 </html>

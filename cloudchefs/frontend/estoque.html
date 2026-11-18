@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Chefs</title>
+    <link rel="icon" href="img/logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+    <main class="conteudo">
+        <div class="cabecalho-pagina">
+            <div>
+                <h2>Estoque de ingredientes</h2>
+                <p>Registre as entradas (compras) e saídas (perdas) de cada item.</p>
+            </div>
+            <input type="search" id="busca" class="entrada" style="max-width:280px" placeholder="Buscar item...">
+        </div>
+
+        <section class="cartao">
+            <div class="tabela-container">
+                <table class="tabela">
+                    <thead>
+                        <tr><th>Item</th><th class="num">Em estoque</th><th class="num">Mínimo</th><th>Situação</th><th class="num">Movimentar</th></tr>
+                    </thead>
+                    <tbody id="lista"><tr><td colspan="5" class="carregando">Carregando...</td></tr></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="cartao">
+            <h3><i class="fa-solid fa-plus"></i> Cadastrar novo ingrediente</h3>
+            <form id="form-novo" class="linha-campos">
+                <div class="campo"><label for="novo-nome">Nome</label><input id="novo-nome" maxlength="120" required placeholder="Ex.: Tomate"></div>
+                <div class="campo">
+                    <label for="novo-unidade">Unidade</label>
+                    <select id="novo-unidade">
+                        <option value="un">Unidade (un)</option>
+                        <option value="kg">Quilo (kg)</option>
+                        <option value="g">Grama (g)</option>
+                        <option value="L">Litro (L)</option>
+                        <option value="ml">Mililitro (ml)</option>
+                    </select>
+                </div>
+                <div class="campo"><label for="novo-qtd">Quantidade inicial</label><input id="novo-qtd" type="number" min="0" step="0.001" value="0"></div>
+                <div class="campo"><label for="novo-minimo">Estoque mínimo</label><input id="novo-minimo" type="number" min="0" step="0.001" value="10"></div>
+                <div class="campo"><button type="submit" class="btn btn-primario" id="btn-novo">Cadastrar</button></div>
+            </form>
+        </section>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        let itens = [];
+
+        function situacao(i) {
+            if (i.quantidade_atual <= i.quantidade_minima) return '<span class="badge badge-perigo">Repor</span>';
+            if (i.quantidade_atual <= i.quantidade_minima * 2) return '<span class="badge badge-alerta">Atenção</span>';
+            return '<span class="badge badge-ok">OK</span>';
+        }
+
+        function desenhar() {
+            const filtro = document.getElementById('busca').value.trim().toLowerCase();
+            const lista = itens.filter(i => i.nome_item.toLowerCase().includes(filtro));
+            document.getElementById('lista').innerHTML = lista.map(i => {
+                const passo = i.unidade_medida === 'un' ? '1' : '0.001';
+                return `
+                <tr>
+                    <td><b>${esc(i.nome_item)}</b></td>
+                    <td class="num">${numeroBR(i.quantidade_atual)} ${esc(i.unidade_medida)}</td>
+                    <td class="num">${numeroBR(i.quantidade_minima)} ${esc(i.unidade_medida)}</td>
+                    <td>${situacao(i)}</td>
+                    <td>
+                        <div class="mov-estoque">
+                            <input type="number" min="0" step="${passo}" placeholder="Qtd." id="mov-${i.id_item}" aria-label="Quantidade de ${esc(i.nome_item)}">
+                            <button class="btn btn-perigo btn-pequeno" onclick="movimentar(${i.id_item}, 'remover', this)" title="Saída"><i class="fa-solid fa-minus"></i> Saída</button>
+                            <button class="btn btn-sucesso btn-pequeno" onclick="movimentar(${i.id_item}, 'adicionar', this)" title="Entrada"><i class="fa-solid fa-plus"></i> Entrada</button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="5" class="vazio">Nenhum item encontrado.</td></tr>';
+        }
+
+        async function carregar() {
+            try {
+                itens = (await api('estoque.php')).itens;
+                desenhar();
+            } catch (e) {
+                document.getElementById('lista').innerHTML = `<tr><td colspan="5" class="vazio">${esc(e.message)}</td></tr>`;
+            }
+        }
+
+        async function movimentar(idItem, operacao, botao) {
+            const campo = document.getElementById(`mov-${idItem}`);
+            const quantidade = Number(campo.value);
+            if (!(quantidade > 0)) {
+                exibirMensagem('Informe uma quantidade maior que zero.', 'alerta');
+                campo.focus();
+                return;
+            }
+            await comBotao(botao, async () => {
+                try {
+                    const { item } = await api('estoque.php', { metodo: 'PATCH', dados: { id_item: idItem, operacao, quantidade } });
+                    itens = itens.map(i => i.id_item === item.id_item ? item : i);
+                    desenhar();
+                    exibirMensagem(`${item.nome_item}: agora ${numeroBR(item.quantidade_atual)} ${item.unidade_medida}.`, 'sucesso');
+                } catch (e) { exibirMensagem(e.message, 'erro'); }
+            });
+        }
+
+        document.getElementById('busca').addEventListener('input', desenhar);
+
+        document.getElementById('form-novo').addEventListener('submit', async e => {
+            e.preventDefault();
+            const dados = {
+                nome_item: document.getElementById('novo-nome').value.trim(),
+                unidade_medida: document.getElementById('novo-unidade').value,
+                quantidade_atual: document.getElementById('novo-qtd').value || 0,
+                quantidade_minima: document.getElementById('novo-minimo').value || 0,
+            };
+            if (!dados.nome_item) { exibirMensagem('Informe o nome do ingrediente.', 'alerta'); return; }
+            await comBotao(document.getElementById('btn-novo'), async () => {
+                try {
+                    await api('estoque.php', { metodo: 'POST', dados });
+                    exibirMensagem(`"${dados.nome_item}" cadastrado!`, 'sucesso');
+                    e.target.reset();
+                    carregar();
+                } catch (err) { exibirMensagem(err.message, 'erro'); }
+            });
+        });
+
+        iniciarPagina({ id: 'estoque', titulo: 'Estoque', somenteGerente: true }).then(carregar).catch(() => {});
+    </script>
+</body>
+</html>
