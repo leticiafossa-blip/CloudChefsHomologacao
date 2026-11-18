@@ -3,307 +3,279 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Chefs - Novo Pedido</title>
-    <link rel="stylesheet" href="css/pedidos.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <style>
-        /* --- LAYOUT DOS BOTÕES VERMELHOS (Igual à imagem) --- */
-        .quantidade {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 10px;
-        }
-
-        .btn-qtd {
-            background-color: #A60000;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            width: 32px;
-            height: 32px;
-            font-size: 20px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            transition: transform 0.1s;
-        }
-
-        .btn-qtd:active {
-            transform: scale(0.90);
-        }
-
-        .qtd-numero {
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-            min-width: 20px;
-            text-align: center;
-        }
-
-        /* --- AJUSTE DO MINI ÍCONE DO BANCO DE DADOS --- */
-        .item-icone {
-            font-size: 65px; /* Transforma o emoji num ícone gigante */
-            display: block;
-            margin-bottom: 10px;
-        }
-    </style>
+    <title>Cloud Chefs</title>
+    <link rel="icon" href="img/logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-    <header class="topo">
-        <a href="#" onclick="history.back()" class="btn-voltar-topo">← Voltar</a>
-        <img src="img/logo.png" alt="Logo Cloud Chefs" class="logo-topo">
-        <h1>Novo Pedido</h1>
-    </header>
-
-    <div class="container">
-        <div id="etapa-cliente" class="etapa ativa">
-            <p class="instrucao">Insira o nome do cliente para iniciar o pedido:</p>
-            
-            <div class="input-grupo">
-                <label for="nome-cliente">Nome do Cliente:</label>
-                <input type="text" id="nome-cliente" class="input" placeholder="Ex: Maria da Silva" required>
-            </div>
-
-            <button class="btn-principal" onclick="proximaEtapa()">SEGUINTE</button>
-            <a href="monitoramento.html" class="btn-voltar">VOLTAR</a>
+    <main class="conteudo">
+        <div class="passos" id="passos">
+            <span class="passo ativo" data-passo="1"><b>1</b> Cliente</span>
+            <span class="passo" data-passo="2"><b>2</b> Itens</span>
+            <span class="passo" data-passo="3"><b>3</b> Pagamento</span>
         </div>
 
-        <div id="etapa-cardapio" class="etapa">
-            <h2 class="cliente-info">Pedido para: <span id="nome-cliente-exibicao"></span></h2>
-            
-            <div class="abas">
-                <button class="aba-btn ativa" data-categoria="lanches" onclick="mudarAba('lanches')">LANCHES</button>
-                <button class="aba-btn" data-categoria="acompanhamentos" onclick="mudarAba('acompanhamentos')">ACOMPANHAMENTOS</button>
-                <button class="aba-btn" data-categoria="bebidas" onclick="mudarAba('bebidas')">BEBIDAS</button>
-            </div>
+        <!-- Etapa 1: cliente -->
+        <section class="cartao etapa" id="etapa-1" style="max-width:520px">
+            <h3>Para quem é o pedido?</h3>
+            <form id="form-cliente">
+                <div class="campo">
+                    <label for="nome-cliente">Nome do cliente</label>
+                    <input type="text" id="nome-cliente" maxlength="120" placeholder="Ex.: Maria da Silva" autocomplete="off">
+                </div>
+                <div class="acoes">
+                    <button type="submit" class="btn btn-primario">Continuar <i class="fa-solid fa-arrow-right"></i></button>
+                    <a href="monitoramento.html" class="btn btn-secundario">Cancelar</a>
+                </div>
+            </form>
+        </section>
 
-            <div class="produtos-categorias">
-                <div id="produtos-lanches" class="produtos-container ativa">
-                    <div class="produto-item">
-                        <img src="img/hambuguer1.png" alt="Mega Stacker" class="img-produto">
-                        <h2>Mega Stacker</h2>
-                        <p class="preco">R$28,90</p>
-                        <div class="quantidade">
-                            <button class="btn-qtd" onclick="diminuir(0)">−</button>
-                            <span class="qtd-numero" id="qtd0">0</span>
-                            <button class="btn-qtd" onclick="aumentar(0)">+</button>
-                        </div>
+        <!-- Etapa 2: cardápio -->
+        <section class="etapa oculto" id="etapa-2">
+            <div class="grade-pedido">
+                <div>
+                    <div class="abas" id="abas">
+                        <button class="aba ativa" data-categoria="lanche">🍔 Lanches</button>
+                        <button class="aba" data-categoria="acompanhamento">🍟 Acompanhamentos</button>
+                        <button class="aba" data-categoria="bebida">🥤 Bebidas</button>
                     </div>
-
-                    <div class="produto-item">
-                        <img src="img/bigmac.png" alt="Big Mac" class="img-produto">
-                        <h2>Big Mac</h2>
-                        <p class="preco">R$28,90</p>
-                        <div class="quantidade">
-                            <button class="btn-qtd" onclick="diminuir(1)">−</button>
-                            <span class="qtd-numero" id="qtd1">0</span>
-                            <button class="btn-qtd" onclick="aumentar(1)">+</button>
-                        </div>
-                    </div>
-
-                    <div class="produto-item">
-                        <img src="img/duploquarterao.png" alt="Duplo Quarterão" class="img-produto">
-                        <h2>Duplo Quarteirão</h2>
-                        <p class="preco">R$32,50</p>
-                        <div class="quantidade">
-                            <button class="btn-qtd" onclick="diminuir(2)">−</button>
-                            <span class="qtd-numero" id="qtd2">0</span>
-                            <button class="btn-qtd" onclick="aumentar(2)">+</button>
-                        </div>
-                    </div>
-
-                    <div class="produto-item">
-                        <img src="img/duploburguercomqueijo.png" alt="Duplo Burguer c/ Queijo" class="img-produto">
-                        <h2>Duplo Burguer c/ Queijo</h2>
-                        <p class="preco">R$25,00</p>
-                        <div class="quantidade">
-                            <button class="btn-qtd" onclick="diminuir(3)">−</button>
-                            <span class="qtd-numero" id="qtd3">0</span>
-                            <button class="btn-qtd" onclick="aumentar(3)">+</button>
-                        </div>
-                    </div>
-                    
-                    <div class="produto-item">
-                        <img src="img/duploburguerbacon.png" alt="Duplo Burguer com Bacon" class="img-produto">
-                        <h2>Duplo Burguer c/ Bacon</h2>
-                        <p class="preco">R$30,50</p>
-                        <div class="quantidade">
-                            <button class="btn-qtd" onclick="diminuir(4)">−</button>
-                            <span class="qtd-numero" id="qtd4">0</span>
-                            <button class="btn-qtd" onclick="aumentar(4)">+</button>
-                        </div>
-                    </div>
-
-                    <div class="produto-item">
-                        <img src="img/mcchickenduplo.png" alt="Mc Chicken Duplo" class="img-produto">
-                        <h2>Mc Chicken Duplo</h2>
-                        <p class="preco">R$18,00</p>
-                        <div class="quantidade">
-                            <button class="btn-qtd" onclick="diminuir(5)">−</button>
-                            <span class="qtd-numero" id="qtd5">0</span>
-                            <button class="btn-qtd" onclick="aumentar(5)">+</button>
-                        </div>
-                    </div>
-
-                    <div class="produto-item">
-                        <img src="img/cheeseburguer.png" alt="Cheeseburguer" class="img-produto">
-                        <h2>Cheeseburguer</h2>
-                        <p class="preco">R$22,00</p>
-                        <div class="quantidade">
-                            <button class="btn-qtd" onclick="diminuir(6)">−</button>
-                            <span class="qtd-numero" id="qtd6">0</span>
-                            <button class="btn-qtd" onclick="aumentar(6)">+</button>
-                        </div>
-                    </div>
-
-                    <div class="produto-item">
-                        <img src="img/mccchickenbacon.png" alt="Mc Chicken Bacon" class="img-produto">
-                        <h2>Mc Chicken Bacon</h2>
-                        <p class="preco">R$38,00</p>
-                        <div class="quantidade">
-                            <button class="btn-qtd" onclick="diminuir(7)">−</button>
-                            <span class="qtd-numero" id="qtd7">0</span>
-                            <button class="btn-qtd" onclick="aumentar(7)">+</button>
-                        </div>
-                    </div>
+                    <div class="cardapio" id="cardapio"><div class="carregando">Carregando cardápio...</div></div>
                 </div>
 
-                <div id="produtos-acompanhamentos" class="produtos-container">
-                    <div class="produto-item">
-                        <img src="img/batatap.png" alt="Batata Frita P" class="img-produto">
-                        <h2>Batata Frita P</h2>
-                        <p class="preco">R$9,00</p>
-                        <div class="quantidade">
-                            <button class="btn-qtd" onclick="diminuir(8)">−</button>
-                            <span class="qtd-numero" id="qtd8">0</span>
-                            <button class="btn-qtd" onclick="aumentar(8)">+</button>
-                        </div>
+                <aside class="cartao resumo">
+                    <h3>Pedido de <span id="cliente-resumo"></span></h3>
+                    <ul id="itens-resumo"></ul>
+                    <div class="total"><span>Total</span><span id="total">R$ 0,00</span></div>
+                    <div class="acoes">
+                        <button class="btn btn-secundario" onclick="irPara(1)"><i class="fa-solid fa-arrow-left"></i></button>
+                        <button class="btn btn-primario" style="flex:1" id="btn-ir-pagamento" onclick="irPara(3)" disabled>Ir para pagamento</button>
                     </div>
-                    <div class="produto-item">
-                        <img src="img/batatam.png" alt="Batata Frita M" class="img-produto">
-                        <h2>Batata Frita M</h2>
-                        <p class="preco">R$13,00</p>
-                        <div class="quantidade">
-                            <button class="btn-qtd" onclick="diminuir(9)">−</button>
-                            <span class="qtd-numero" id="qtd9">0</span>
-                            <button class="btn-qtd" onclick="aumentar(9)">+</button>
-                        </div>
-                    </div>
-                    <div class="produto-item">
-                        <img src="img/batatag.png" alt="Batata Frita G" class="img-produto">
-                        <h2>Batata Frita G</h2>
-                        <p class="preco">R$17,00</p>
-                        <div class="quantidade">
-                            <button class="btn-qtd" onclick="diminuir(10)">−</button>
-                            <span class="qtd-numero" id="qtd10">0</span>
-                            <button class="btn-qtd" onclick="aumentar(10)">+</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="produtos-bebidas" class="produtos-container">
-                    <div class="produto-item">
-                        <img src="img/cocacola.png" alt="Coca-Cola" class="img-produto1">
-                        <h2>Coca-Cola</h2>
-                        <p class="preco">R$8,00</p>
-                        <div class="quantidade">
-                            <button class="btn-qtd" onclick="diminuir(11)">−</button>
-                            <span class="qtd-numero" id="qtd11">0</span>
-                            <button class="btn-qtd" onclick="aumentar(11)">+</button>
-                        </div>
-                    </div>
-                    <div class="produto-item">
-                        <img src="img/guarana.png" alt="Guaraná" class="img-produto1">
-                        <h2>Guaraná</h2>
-                        <p class="preco">R$8,00</p>
-                        <div class="quantidade">
-                            <button class="btn-qtd" onclick="diminuir(12)">−</button>
-                            <span class="qtd-numero" id="qtd12">0</span>
-                            <button class="btn-qtd" onclick="aumentar(12)">+</button>
-                        </div>
-                    </div>
-                    <div class="produto-item">
-                        <img src="img/fantalaranja.png" alt="Fanta Laranja" class="img-produto1">
-                        <h2>Fanta Laranja</h2>
-                        <p class="preco">R$8,00</p>
-                        <div class="quantidade">
-                            <button class="btn-qtd" onclick="diminuir(13)">−</button>
-                            <span class="qtd-numero" id="qtd13">0</span>
-                            <button class="btn-qtd" onclick="aumentar(13)">+</button>
-                        </div>
-                    </div>
-                </div>
-            </div> 
-            
-            <div class="rodape">
-                <div class="totais">
-                    <p>Subtotal: R$ <span id="subtotal">0,00</span></p>
-                    <h3>Total: R$ <span id="total">0,00</span></h3>
-                </div>
-                <button class="btn-principal" onclick="proximaEtapaPagamento()">AVANÇAR</button>
+                </aside>
             </div>
-            
-        </div>
-        
-        <div id="etapa-pagamento" class="etapa">
-            <h2 class="cliente-info">Pagamento de: <span id="nome-cliente-pagamento"></span></h2>
-            <p class="instrucao">Selecione a forma de pagamento:</p>
+        </section>
 
-            <div class="metodos-pagamento" id="metodosPagamento">
-                <button class="metodo-btn" data-forma="Dinheiro" onclick="selecionarPagamento('Dinheiro')">
-                    <i class="fas fa-money-bill-wave"></i> Dinheiro
-                </button>
-                <button class="metodo-btn" data-forma="Debito" onclick="selecionarPagamento('Debito')">
-                    <i class="fas fa-credit-card"></i> Débito
-                </button>
-                <button class="metodo-btn" data-forma="Credito" onclick="selecionarPagamento('Credito')">
-                    <i class="fas fa-credit-card"></i> Crédito
-                </button>
-                <button class="metodo-btn" data-forma="PIX" onclick="selecionarPagamento('PIX')">
-                    <i class="fas fa-qrcode"></i> PIX
+        <!-- Etapa 3: pagamento -->
+        <section class="cartao etapa oculto" id="etapa-3" style="max-width:720px">
+            <h3>Como o cliente vai pagar?</h3>
+            <p class="suave" style="margin-top:-6px">Pedido de <b id="cliente-pagamento"></b> · total <b id="total-pagamento"></b></p>
+            <div class="formas" id="formas">
+                <button class="forma" data-forma="Dinheiro"><i class="fa-solid fa-money-bill-wave"></i> Dinheiro</button>
+                <button class="forma" data-forma="Debito"><i class="fa-regular fa-credit-card"></i> Débito</button>
+                <button class="forma" data-forma="Credito"><i class="fa-solid fa-credit-card"></i> Crédito</button>
+                <button class="forma" data-forma="PIX"><i class="fa-solid fa-qrcode"></i> Pix</button>
+            </div>
+            <div class="acoes">
+                <button class="btn btn-secundario" onclick="irPara(2)"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+                <button class="btn btn-sucesso btn-grande" id="btn-finalizar" disabled onclick="finalizar(this)">
+                    <i class="fa-solid fa-check"></i> Finalizar pedido
                 </button>
             </div>
-            
-            <h3>Valor Total: R$ <span id="total-pagamento">0,00</span></h3>
+        </section>
+    </main>
 
-            <div class="rodape-pagamento">
-                <button class="btn-voltar-principal" onclick="voltarParaCardapio()">← Voltar</button>
-                <button class="btn-finalizar" onclick="finalizarPedido()" id="btn-finalizar-pedido" disabled>FINALIZAR</button>
-            </div>
-        </div>
-    </div>
-    
-    <div id="global-message-container"></div>
-    
-    <script src="js/auth.js"></script>
-    <script src="js/estoque.js"></script>
-    <script src="js/pedidos.js"></script>
-    
+    <script src="js/app.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof quantidades === 'undefined') {
-                window.quantidades = [0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-            }
-            
-            document.querySelectorAll('.produto-item').forEach((item, index) => {
-                const qtdSpan = document.getElementById(`qtd${index}`);
-                if (qtdSpan) {
-                    qtdSpan.textContent = quantidades[index];
+        let produtos = [];
+        const carrinho = {};          // id_produto -> quantidade
+        let categoria = 'lanche';
+        let formaPagamento = null;
+        let consultaPix = null;
+
+        const nomeCliente = () => document.getElementById('nome-cliente').value.trim() || 'Consumidor';
+
+        function totalCarrinho() {
+            return Object.entries(carrinho).reduce((soma, [id, qtd]) =>
+                soma + qtd * (produtos.find(p => p.id_produto == id)?.preco || 0), 0);
+        }
+
+        function irPara(etapa) {
+            if (etapa === 3 && totalCarrinho() === 0) return;
+            document.querySelectorAll('.etapa').forEach(e => e.classList.add('oculto'));
+            document.getElementById(`etapa-${etapa}`).classList.remove('oculto');
+            document.querySelectorAll('.passo').forEach(p => {
+                const n = Number(p.dataset.passo);
+                p.className = 'passo' + (n === etapa ? ' ativo' : n < etapa ? ' feito' : '');
+            });
+            document.getElementById('cliente-resumo').textContent = nomeCliente();
+            document.getElementById('cliente-pagamento').textContent = nomeCliente();
+            document.getElementById('total-pagamento').textContent = moeda(totalCarrinho());
+            if (etapa === 1) document.getElementById('nome-cliente').focus();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function desenharCardapio() {
+            const lista = produtos.filter(p => p.categoria === categoria);
+            document.getElementById('cardapio').innerHTML = lista.map(p => {
+                const qtd = carrinho[p.id_produto] || 0;
+                const imagem = p.imagem
+                    ? `<img src="${esc(p.imagem)}" alt="" loading="lazy" onerror="this.outerHTML='<div class=icone>${iconeProduto(p.categoria)}</div>'">`
+                    : `<div class="icone">${iconeProduto(p.categoria)}</div>`;
+                return `
+                    <div class="produto ${qtd ? 'selecionado' : ''}">
+                        ${imagem}
+                        <h4>${esc(p.nome)}</h4>
+                        <div class="preco">${moeda(p.preco)}</div>
+                        <div class="contador">
+                            <button aria-label="Remover" onclick="alterar(${p.id_produto}, -1)" ${qtd ? '' : 'disabled'}>−</button>
+                            <span>${qtd}</span>
+                            <button aria-label="Adicionar" onclick="alterar(${p.id_produto}, 1)">+</button>
+                        </div>
+                    </div>`;
+            }).join('') || '<p class="suave">Nenhum produto nesta categoria.</p>';
+        }
+
+        function desenharResumo() {
+            const itens = Object.entries(carrinho).map(([id, qtd]) => {
+                const p = produtos.find(x => x.id_produto == id);
+                return `<li><span><b>${qtd}x</b> ${esc(p.nome)}</span><span>${moeda(p.preco * qtd)}</span></li>`;
+            });
+            document.getElementById('itens-resumo').innerHTML = itens.join('') || '<li class="suave">Nenhum item ainda.</li>';
+            document.getElementById('total').textContent = moeda(totalCarrinho());
+            document.getElementById('btn-ir-pagamento').disabled = itens.length === 0;
+        }
+
+        function alterar(id, delta) {
+            const nova = Math.min(50, Math.max(0, (carrinho[id] || 0) + delta));
+            if (nova) carrinho[id] = nova; else delete carrinho[id];
+            desenharCardapio();
+            desenharResumo();
+        }
+
+        async function finalizar(botao) {
+            const itens = Object.entries(carrinho).map(([id, quantidade]) => ({ id_produto: Number(id), quantidade }));
+            await comBotao(botao, async () => {
+                try {
+                    const r = await api('pedidos.php', {
+                        metodo: 'POST',
+                        dados: { nome_cliente: nomeCliente(), forma_pagamento: formaPagamento, itens },
+                    });
+                    if (r.pix) {
+                        await abrirPix(r.id_pedido);
+                    } else {
+                        exibirMensagem(`Pedido ${numeroPedido(r.id_pedido)} enviado para a cozinha!`, 'sucesso');
+                        setTimeout(() => location.href = 'monitoramento.html', 1200);
+                    }
+                } catch (e) {
+                    exibirMensagem(e.message, 'erro');
                 }
             });
+        }
 
-            if (document.getElementById("subtotal") && document.getElementById("total")) {
-                if (typeof atualizarTotais === 'function') {
-                    atualizarTotais(); 
-                }
+        // ---------- Pix ----------
+
+        async function abrirPix(idPedido) {
+            const pix = await api('pix_criar.php', { metodo: 'POST', dados: { id_pedido: idPedido } });
+            const fundo = document.createElement('div');
+            fundo.className = 'modal-fundo';
+            fundo.id = 'modal-pix';
+
+            const conteudoPix = pix.demo
+                ? `<div class="aviso-demo"><b><i class="fa-solid fa-flask"></i> Modo demonstração.</b>
+                       O Mercado Pago ainda não foi configurado, então nenhuma cobrança real foi criada.
+                       Use o botão abaixo para simular que o cliente pagou.</div>
+                   <button class="btn btn-sucesso btn-bloco" onclick="simularPagamento(${idPedido}, this)">
+                       <i class="fa-solid fa-circle-check"></i> Simular pagamento aprovado</button>`
+                : `${pix.qr_code_base64 ? `<img class="qr-pix" src="data:image/png;base64,${pix.qr_code_base64}" alt="QR Code Pix">` : ''}
+                   <div class="campo" style="text-align:left;margin-top:12px">
+                       <label for="pix-copia-cola">Pix copia e cola</label>
+                       <textarea id="pix-copia-cola" readonly>${esc(pix.copia_cola)}</textarea>
+                   </div>
+                   <div class="acoes" style="justify-content:center">
+                       <button class="btn btn-secundario" onclick="copiarPix()"><i class="fa-regular fa-copy"></i> Copiar</button>
+                       <button class="btn btn-primario" onclick="verificarPix(${idPedido}, true)"><i class="fa-solid fa-rotate"></i> Já paguei</button>
+                   </div>`;
+
+            fundo.innerHTML = `
+                <div class="modal" role="dialog" aria-modal="true" aria-labelledby="titulo-pix">
+                    <h2 id="titulo-pix"><i class="fa-solid fa-qrcode"></i> Pagamento via Pix</h2>
+                    <p class="suave">Pedido <b>${numeroPedido(idPedido)}</b> · <b>${moeda(pix.valor_total)}</b></p>
+                    ${conteudoPix}
+                    <p id="status-pix" class="suave" style="margin:16px 0 8px"><i class="fa-solid fa-spinner fa-spin"></i> Aguardando pagamento...</p>
+                    <button class="btn btn-perigo btn-pequeno" onclick="cancelarPix(${idPedido}, this)">Cancelar pedido</button>
+                </div>`;
+            document.body.appendChild(fundo);
+
+            if (!pix.demo) consultaPix = setInterval(() => verificarPix(idPedido, false), 5000);
+        }
+
+        function copiarPix() {
+            const campo = document.getElementById('pix-copia-cola');
+            navigator.clipboard.writeText(campo.value)
+                .then(() => exibirMensagem('Código Pix copiado!', 'sucesso'))
+                .catch(() => { campo.select(); exibirMensagem('Selecione e copie o código manualmente.', 'alerta'); });
+        }
+
+        function pagamentoAprovado(idPedido) {
+            clearInterval(consultaPix);
+            document.getElementById('status-pix').innerHTML = '<span style="color:var(--verde);font-weight:700"><i class="fa-solid fa-circle-check"></i> Pagamento aprovado! Enviando para a cozinha...</span>';
+            exibirMensagem(`Pix do pedido ${numeroPedido(idPedido)} aprovado!`, 'sucesso');
+            setTimeout(() => location.href = 'monitoramento.html', 1500);
+        }
+
+        async function verificarPix(idPedido, avisar) {
+            try {
+                const r = await api('pix_consultar.php', { metodo: 'POST', dados: { id_pedido: idPedido } });
+                if (r.pago) pagamentoAprovado(idPedido);
+                else if (avisar) exibirMensagem('O pagamento ainda não foi confirmado.', 'alerta');
+            } catch (e) {
+                if (avisar) exibirMensagem(e.message, 'erro');
             }
+        }
+
+        async function simularPagamento(idPedido, botao) {
+            await comBotao(botao, async () => {
+                try {
+                    await api('pix_consultar.php', { metodo: 'POST', dados: { id_pedido: idPedido, simular: true } });
+                    pagamentoAprovado(idPedido);
+                } catch (e) { exibirMensagem(e.message, 'erro'); }
+            });
+        }
+
+        async function cancelarPix(idPedido, botao) {
+            if (!confirm('Cancelar este pedido? O Pix não deve ser pago depois disso.')) return;
+            await comBotao(botao, async () => {
+                try {
+                    await api('pedidos.php', { metodo: 'PATCH', dados: { id_pedido: idPedido, status: 'Cancelado' } });
+                    clearInterval(consultaPix);
+                    document.getElementById('modal-pix').remove();
+                    exibirMensagem(`Pedido ${numeroPedido(idPedido)} cancelado.`, 'alerta');
+                } catch (e) { exibirMensagem(e.message, 'erro'); }
+            });
+        }
+
+        // ---------- Eventos ----------
+
+        document.getElementById('form-cliente').addEventListener('submit', e => { e.preventDefault(); irPara(2); });
+
+        document.getElementById('abas').addEventListener('click', e => {
+            const aba = e.target.closest('.aba');
+            if (!aba) return;
+            categoria = aba.dataset.categoria;
+            document.querySelectorAll('.aba').forEach(a => a.classList.toggle('ativa', a === aba));
+            desenharCardapio();
         });
+
+        document.getElementById('formas').addEventListener('click', e => {
+            const botao = e.target.closest('.forma');
+            if (!botao) return;
+            formaPagamento = botao.dataset.forma;
+            document.querySelectorAll('.forma').forEach(b => b.classList.toggle('selecionada', b === botao));
+            document.getElementById('btn-finalizar').disabled = false;
+        });
+
+        iniciarPagina({ id: 'pedidos', titulo: 'Novo pedido' }).then(async () => {
+            document.getElementById('nome-cliente').focus();
+            try {
+                produtos = (await api('produtos.php')).produtos;
+                desenharCardapio();
+                desenharResumo();
+            } catch (e) {
+                document.getElementById('cardapio').innerHTML = `<p class="suave">${esc(e.message)}</p>`;
+            }
+        }).catch(() => {});
     </script>
 </body>
 </html>

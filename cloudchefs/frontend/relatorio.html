@@ -1,372 +1,124 @@
 <!DOCTYPE html>
-<html lang="pt-br">
-
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relatórios - Cloud Chef</title>
-    <link rel="stylesheet" href="css/relatorio.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        /* Estilo da Tabela de Resultados do Relatório */
-        #resultado-relatorio {
-            margin-top: 40px;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            display: none;
-            /* Inicia oculto */
-        }
-
-        #resultado-relatorio h2 {
-            color: #b30000;
-            margin-bottom: 15px;
-            font-size: 24px;
-            text-align: center;
-        }
-
-        #resultado-relatorio table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        #resultado-relatorio th,
-        #resultado-relatorio td {
-            border: 1px solid #c5b18b;
-            padding: 10px;
-            text-align: left;
-        }
-
-        #resultado-relatorio th {
-            background-color: #b30000;
-            color: #ffcc66;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        #resultado-relatorio td {
-            text-align: center;
-        }
-
-        #resultado-relatorio tr:nth-child(even) {
-            background-color: #fdf0c2;
-        }
-
-        /* NEW: Estilo para ocultar elementos não essenciais durante a impressão */
-        @media print {
-
-            .topo,
-            .form-section,
-            .filtros,
-            .datas,
-            .botoes,
-            #global-message-container,
-            hr {
-                display: none;
-            }
-
-            main {
-                padding: 0;
-                margin: 0;
-            }
-
-            .container {
-                border: none;
-            }
-
-            body {
-                background-color: white;
-            }
-
-            #resultado-relatorio {
-                display: block !important;
-                box-shadow: none;
-                margin-top: 0;
-                padding: 0;
-                font-size: 10pt;
-                /* Tamanho da fonte para impressão */
-            }
-
-            #resultado-relatorio table,
-            #resultado-relatorio th,
-            #resultado-relatorio td {
-                border-color: #333 !important;
-            }
-        }
-    </style>
+    <title>Cloud Chefs</title>
+    <link rel="icon" href="img/logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/app.css">
 </head>
-
 <body>
-    <div class="container">
-        <header class="topo">
-            <a href="#" onclick="history.back()" class="btn-voltar-topo">← Voltar</a>
-            <img src="img/logo.png" alt="Logo Cloud Chefs" class="logo-topo">
-            <h1>Relatórios</h1>
-        </header>
-
-        <main>
-            <div class="form-section">
-                <label for="relatorio">Selecione o relatório:</label>
-                <select id="relatorio">
-                    <option value="">SELECIONE</option>
-                    <option value="Vendas">Vendas</option>
-                    <option value="Produtos">Produtos</option>
-                </select>
+    <main class="conteudo">
+        <div class="cabecalho-pagina">
+            <div>
+                <h2>Relatórios</h2>
+                <p>Considera apenas pedidos pagos e não cancelados.</p>
             </div>
+        </div>
 
-            <div class="form-section">
-                <label for="tipo">Tipo de saída:</label>
-                <select id="tipo">
-                    <option>PDF</option>
-                    <option>Excel</option>
-                </select>
-            </div>
-
-            <hr>
-
-            <p class="filtros">Filtros:</p>
-
-            <div class="datas">
-                <div class="data-item">
-                    <label for="data-inicio">Data Início:</label>
-                    <input type="date" id="data-inicio">
+        <section class="cartao nao-imprimir">
+            <form id="filtros" class="linha-campos">
+                <div class="campo">
+                    <label for="tipo">Relatório</label>
+                    <select id="tipo">
+                        <option value="vendas">Vendas por dia</option>
+                        <option value="produtos">Produtos mais vendidos</option>
+                    </select>
                 </div>
+                <div class="campo"><label for="inicio">De</label><input type="date" id="inicio" required></div>
+                <div class="campo"><label for="fim">Até</label><input type="date" id="fim" required></div>
+                <div class="campo">
+                    <div class="acoes">
+                        <button type="submit" class="btn btn-primario" id="btn-consultar"><i class="fa-solid fa-chart-column"></i> Gerar</button>
+                    </div>
+                </div>
+            </form>
+        </section>
 
-                <div class="data-item">
-                    <label for="data-fim">Data Fim:</label>
-                    <input type="date" id="data-fim">
+        <section class="cartao oculto" id="resultado">
+            <div class="cabecalho-pagina" style="margin-bottom:10px">
+                <h3 id="titulo-relatorio" style="margin:0"></h3>
+                <div class="acoes nao-imprimir">
+                    <button class="btn btn-secundario btn-pequeno" onclick="exportarCSV(document.querySelector('#resultado table'), nomeArquivo())"><i class="fa-solid fa-file-excel"></i> Excel</button>
+                    <button class="btn btn-secundario btn-pequeno" onclick="window.print()"><i class="fa-solid fa-file-pdf"></i> PDF</button>
                 </div>
             </div>
+            <div id="grafico"></div>
+            <div class="tabela-container" id="tabela"></div>
+        </section>
+    </main>
 
-            <div class="botoes">
-                <button class="consultar" id="btnConsultar" onclick="consultarRelatorio()">
-                    <span class="btn-text">CONSULTAR</span>
-                    <span class="loader"></span>
-                </button>
-                <button class="limpar" onclick="limparFiltros()">LIMPAR</button>
-                <button class="consultar" onclick="exportarRelatorio()">EXPORTAR</button>
-            </div>
-
-            <div id="resultado-relatorio">
-            </div>
-
-
-        </main>
-    </div>
-
-    <div id="global-message-container"></div>
-    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
     <script>
-        // (A função auth.js já está carregada)
-        document.addEventListener('DOMContentLoaded', () => {
-            verificarAcessoPagina('Relatórios');
-        });
+        let ultimo = null;
+        const nomeArquivo = () => `relatorio_${ultimo.tipo}_${ultimo.inicio}_a_${ultimo.fim}.csv`;
+        const br = iso => iso.split('-').reverse().join('/');
 
-        /**
-         * Formata os dados de VENDAS em uma tabela HTML.
-         */
-        function renderizarTabelaVendas(dados, dataInicioStr, dataFimStr) {
-            let linhasTabela = '';
-
-            if (dados.length === 0) {
-                linhasTabela = '<tr><td colspan="3">Nenhum pedido encontrado no período.</td></tr>';
-            } else {
-                dados.forEach(venda => {
-                    linhasTabela += `
-                    <tr>
-                        <td>${new Date(venda.data_venda).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
-                        <td>${venda.total_pedidos}</td>
-                        <td>R$ ${parseFloat(venda.valor_total).toFixed(2).replace('.', ',')}</td>
-                    </tr>
-                `;
-                });
-            }
-
-            return `
-            <h2>Relatório de Vendas (Período: ${dataInicioStr.split('-').reverse().join('/')} a ${dataFimStr.split('-').reverse().join('/')})</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Data</th>
-                        <th>Total de Pedidos</th>
-                        <th>Valor Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${linhasTabela}
-                </tbody>
-            </table>
-        `;
+        function grafico(rotulos, valores) {
+            const maximo = Math.max(...valores, 1);
+            return `<div class="grafico-barras" aria-hidden="true">${valores.map((v, i) => `
+                <div class="coluna" title="${esc(rotulos[i])}: ${moeda(v)}">
+                    <div style="height:${Math.max(1, v / maximo * 100)}%"></div><span>${esc(rotulos[i])}</span>
+                </div>`).join('')}</div>`;
         }
 
-        /**
-         * Formata os dados de PRODUTOS em uma tabela HTML.
-         */
-        function renderizarTabelaProdutos(dados, dataInicioStr, dataFimStr) {
-            let linhasTabela = '';
+        async function gerar() {
+            const busca = {
+                tipo: document.getElementById('tipo').value,
+                inicio: document.getElementById('inicio').value,
+                fim: document.getElementById('fim').value,
+            };
+            if (!busca.inicio || !busca.fim) { exibirMensagem('Informe as duas datas.', 'alerta'); return; }
 
-            if (dados.length === 0) {
-                linhasTabela = '<tr><td colspan="3">Nenhum item vendido no período.</td></tr>';
-            } else {
-                dados.forEach(produto => {
-                    linhasTabela += `
-                    <tr>
-                        <td>${produto.nome_produto}</td>
-                        <td>${produto.total_vendido}</td>
-                        <td>R$ ${parseFloat(produto.receita_total).toFixed(2).replace('.', ',')}</td>
-                    </tr>
-                `;
-                });
-            }
+            await comBotao(document.getElementById('btn-consultar'), async () => {
+                try {
+                    const r = await api(`relatorios.php?${new URLSearchParams(busca)}`);
+                    ultimo = r;
+                    const caixa = document.getElementById('resultado');
+                    caixa.classList.remove('oculto');
 
-            return `
-            <h2>Relatório de Produtos (Período: ${dataInicioStr.split('-').reverse().join('/')} a ${dataFimStr.split('-').reverse().join('/')})</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Produto</th>
-                        <th>Qtd. Vendida</th>
-                        <th>Receita</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${linhasTabela}
-                </tbody>
-            </table>
-        `;
+                    if (r.tipo === 'vendas') {
+                        const total = r.linhas.reduce((s, l) => s + l.valor_total, 0);
+                        const pedidos = r.linhas.reduce((s, l) => s + l.pedidos, 0);
+                        document.getElementById('titulo-relatorio').textContent = `Vendas de ${br(r.inicio)} a ${br(r.fim)}`;
+                        document.getElementById('grafico').innerHTML = r.linhas.length
+                            ? grafico(r.linhas.map(l => dataCurta(l.data)), r.linhas.map(l => l.valor_total)) : '';
+                        document.getElementById('tabela').innerHTML = `
+                            <table class="tabela">
+                                <thead><tr><th>Data</th><th class="num">Pedidos</th><th class="num">Valor</th></tr></thead>
+                                <tbody>${r.linhas.map(l => `<tr><td>${br(l.data)}</td><td class="num">${l.pedidos}</td><td class="num">${moeda(l.valor_total)}</td></tr>`).join('')
+                                    || '<tr><td colspan="3" class="vazio">Nenhuma venda no período.</td></tr>'}</tbody>
+                                <tfoot><tr><td>Total</td><td class="num">${pedidos}</td><td class="num">${moeda(total)}</td></tr></tfoot>
+                            </table>`;
+                    } else {
+                        const total = r.linhas.reduce((s, l) => s + l.receita, 0);
+                        const top = r.linhas.slice(0, 10);
+                        document.getElementById('titulo-relatorio').textContent = `Produtos vendidos de ${br(r.inicio)} a ${br(r.fim)}`;
+                        document.getElementById('grafico').innerHTML = top.length
+                            ? grafico(top.map(l => l.nome_produto.split(' ').slice(0, 2).join(' ')), top.map(l => l.receita)) : '';
+                        document.getElementById('tabela').innerHTML = `
+                            <table class="tabela">
+                                <thead><tr><th>Produto</th><th class="num">Quantidade</th><th class="num">Receita</th><th class="num">% da receita</th></tr></thead>
+                                <tbody>${r.linhas.map(l => `<tr><td>${esc(l.nome_produto)}</td><td class="num">${l.quantidade}</td><td class="num">${moeda(l.receita)}</td>
+                                    <td class="num">${total ? (l.receita / total * 100).toFixed(1).replace('.', ',') : 0}%</td></tr>`).join('')
+                                    || '<tr><td colspan="4" class="vazio">Nenhum produto vendido no período.</td></tr>'}</tbody>
+                                <tfoot><tr><td>Total</td><td class="num">${r.linhas.reduce((s, l) => s + l.quantidade, 0)}</td><td class="num">${moeda(total)}</td><td class="num">100%</td></tr></tfoot>
+                            </table>`;
+                    }
+                } catch (e) { exibirMensagem(e.message, 'erro'); }
+            });
         }
 
-        /**
-         * Função principal: Consulta o backend com os filtros.
-         */
-        async function consultarRelatorio() {
-            const btn = document.getElementById('btnConsultar');
-            const relatorio = document.getElementById('relatorio').value;
-            const dataInicioStr = document.getElementById('data-inicio').value;
-            const dataFimStr = document.getElementById('data-fim').value;
-            const resultadoDiv = document.getElementById('resultado-relatorio');
+        document.getElementById('filtros').addEventListener('submit', e => { e.preventDefault(); gerar(); });
 
-            if (relatorio === "") {
-                exibirMensagem("Selecione um tipo de relatório.", "alerta");
-                return;
-            }
-            if (!dataInicioStr || !dataFimStr) {
-                exibirMensagem("As datas de início e fim são obrigatórias.", "alerta");
-                return;
-            }
-
-            // Ativa o loader e desativa o botão
-            btn.classList.add('loading');
-            btn.disabled = true;
-            resultadoDiv.innerHTML = '';
-            resultadoDiv.style.display = 'none';
-
-            try {
-                const resposta = await fetch("../backend/gerar_relatorio.php", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        relatorio: relatorio,
-                        data_inicio: dataInicioStr,
-                        data_fim: dataFimStr
-                    })
-                });
-
-                const dados = await resposta.json();
-
-                if (dados.error) {
-                    throw new Error(dados.error);
-                }
-
-                // Renderiza a tabela correta com base nos dados
-                let conteudo = '';
-                if (relatorio === 'Vendas') {
-                    conteudo = renderizarTabelaVendas(dados, dataInicioStr, dataFimStr);
-                } else if (relatorio === 'Produtos') {
-                    conteudo = renderizarTabelaProdutos(dados, dataInicioStr, dataFimStr);
-                }
-
-                resultadoDiv.innerHTML = conteudo;
-                resultadoDiv.style.display = 'block';
-
-            } catch (err) {
-                console.error("Erro ao consultar relatório:", err);
-                exibirMensagem(`Erro: ${err.message}`, 'erro');
-                resultadoDiv.style.display = 'none';
-            } finally {
-                // Desativa o loader e reativa o botão
-                btn.classList.remove('loading');
-                btn.disabled = false;
-            }
-        }
-
-        function limparFiltros() {
-            document.getElementById('relatorio').value = "";
-            document.getElementById('tipo').value = "PDF";
-            document.getElementById('data-inicio').value = "";
-            document.getElementById('data-fim').value = "";
-
-            document.getElementById('resultado-relatorio').innerHTML = '';
-            document.getElementById('resultado-relatorio').style.display = 'none';
-            exibirMensagem('Filtros limpos.', 'alerta');
-        }
-
-        /**
-         * Funções de Exportação (Lê a tabela HTML gerada)
-         * Estas funções do seu arquivo original funcionam perfeitamente.
-         */
-        function exportTableToCSV(table, filename) {
-            let csv = [];
-            const rows = table.querySelectorAll("tr");
-            const DELIMITER = ';';
-
-            for (const row of rows) {
-                const cols = row.querySelectorAll("th, td");
-                const rowData = [];
-                for (const col of cols) {
-                    let text = col.innerText.replace(/R\$/g, '').trim();
-                    text = text.replace(/,/g, '.');
-                    rowData.push('"' + text.replace(/"/g, '""') + '"');
-                }
-                csv.push(rowData.join(DELIMITER));
-            }
-
-            const csvFile = new Blob([csv.join("\n")], { type: "text/csv;charset=utf-8;" });
-            const downloadLink = document.createElement("a");
-
-            downloadLink.href = URL.createObjectURL(csvFile);
-            downloadLink.download = filename;
-
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
-        }
-
-        function exportarRelatorio() {
-            const relatorio = document.getElementById('relatorio').value;
-            const tipoSaida = document.getElementById('tipo').value;
-            const resultadoDiv = document.getElementById('resultado-relatorio');
-
-            if (relatorio === "") {
-                exibirMensagem("Selecione um relatório para exportar.", "alerta");
-                return;
-            }
-            if (resultadoDiv.style.display === 'none' || resultadoDiv.querySelector('table') === null) {
-                exibirMensagem("Consulte o relatório antes de exportar.", "alerta");
-                return;
-            }
-
-            if (tipoSaida === 'PDF') {
-                window.print();
-            } else if (tipoSaida === 'Excel') {
-                const table = resultadoDiv.querySelector('table');
-                const filename = `${relatorio}_Relatorio_${new Date().toISOString().slice(0, 10)}.csv`;
-                exportTableToCSV(table, filename);
-                exibirMensagem(`Exportação para Excel concluída!`, 'sucesso');
-            }
-        }
+        iniciarPagina({ id: 'relatorios', titulo: 'Relatórios', somenteGerente: true }).then(() => {
+            document.getElementById('inicio').value = hojeISO(-13);
+            document.getElementById('fim').value = hojeISO();
+            gerar();
+        }).catch(() => {});
     </script>
 </body>
-
 </html>

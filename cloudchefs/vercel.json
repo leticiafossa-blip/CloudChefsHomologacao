@@ -1,0 +1,30 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/*.php": {
+      "runtime": "vercel-php@0.7.4",
+      "maxDuration": 30,
+      "excludeFiles": "{frontend/**,README.md,dev-router.php}"
+    }
+  },
+  "redirects": [
+    { "source": "/atualizacao_estoque.html", "destination": "/estoque.html", "permanent": false },
+    { "source": "/produtos_cadastro.html", "destination": "/produto.html", "permanent": false },
+    { "source": "/produtos_editar.html", "destination": "/produtos.html", "permanent": false },
+    { "source": "/mercado_pago_config.html", "destination": "/mercado_pago.html", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/", "destination": "/frontend/login.html" },
+    { "source": "/:caminho((?!api/).*)", "destination": "/frontend/:caminho" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ]
+}
