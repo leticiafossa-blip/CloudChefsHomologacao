@@ -8,7 +8,7 @@
  *         { id_item, operacao: "adicionar" | "remover" | "definir", quantidade }
  *         { id_item, quantidade_minima }
  */
-require __DIR__ . '/_lib/bootstrap.php';
+require __DIR__ . '/../_lib/bootstrap.php';
 
 $metodo = metodo(['GET', 'POST', 'PATCH']);
 $db = db();

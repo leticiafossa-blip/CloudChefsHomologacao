@@ -3,7 +3,7 @@
  * Financeiro (somente gerente).
  *   GET /api/financeiro.php?forma=PIX&inicio=2026-11-01&fim=2026-11-30
  */
-require __DIR__ . '/_lib/bootstrap.php';
+require __DIR__ . '/../_lib/bootstrap.php';
 
 metodo(['GET']);
 exigir_gerente();

@@ -6,7 +6,7 @@
  *   PUT    /api/usuarios.php  -> altera { id_usuario, tipo_usuario?, senha? }
  *   DELETE /api/usuarios.php  -> remove { id_usuario }
  */
-require __DIR__ . '/_lib/bootstrap.php';
+require __DIR__ . '/../_lib/bootstrap.php';
 
 $metodo = metodo(['GET', 'POST', 'PUT', 'DELETE']);
 $eu = exigir_gerente();

@@ -8,7 +8,7 @@
  * não consegue aprovar pedido nenhum. Se o gerente salvar o "Webhook Secret",
  * a assinatura do aviso também é conferida.
  */
-require __DIR__ . '/_lib/bootstrap.php';
+require __DIR__ . '/../_lib/bootstrap.php';
 
 metodo(['POST']);
 $db = db();

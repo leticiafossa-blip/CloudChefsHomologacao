@@ -44,12 +44,14 @@ Sistema de gestão para lanchonetes: pedidos no caixa, fila da cozinha, estoque 
 cloudchefs/
 ├── vercel.json            # configuração do Vercel (runtime PHP e rotas)
 ├── dev-router.php         # para rodar localmente com "php -S"
-├── api/                   # cada arquivo .php vira um endpoint /api/...
-│   ├── login.php  logout.php  me.php  health.php
-│   ├── pedidos.php  produtos.php  estoque.php  usuarios.php
-│   ├── financeiro.php  relatorios.php
-│   ├── pix_criar.php  pix_consultar.php  pix_webhook.php
-│   ├── mp_config.php  mp_testar.php
+├── api/
+│   ├── index.php          # ÚNICA função do Vercel: recebe /api/<nome>.php e chama o handler
+│   ├── _handlers/         # um arquivo por endpoint (não viram funções; limite de 12 no plano Hobby)
+│   │   ├── login.php  logout.php  me.php  health.php
+│   │   ├── pedidos.php  produtos.php  estoque.php  usuarios.php
+│   │   ├── financeiro.php  relatorios.php
+│   │   ├── pix_criar.php  pix_consultar.php  pix_webhook.php
+│   │   └── mp_config.php  mp_testar.php
 │   └── _lib/              # código compartilhado (não são endpoints)
 │       ├── bootstrap.php  db.php  auth.php  pedidos.php  mercadopago.php
 │       ├── schema.sql     # estrutura do banco

@@ -1,6 +1,6 @@
 <?php
 // GET /api/health.php  -> confere se a API e o banco estão respondendo
-require __DIR__ . '/_lib/bootstrap.php';
+require __DIR__ . '/../_lib/bootstrap.php';
 
 metodo(['GET']);
 db()->query('SELECT 1');

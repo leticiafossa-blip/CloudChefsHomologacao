@@ -5,7 +5,7 @@
  * Com "simular": true e o Mercado Pago NÃO configurado, aprova o pagamento em
  * modo demonstração — útil para apresentar o fluxo sem dinheiro real.
  */
-require __DIR__ . '/_lib/bootstrap.php';
+require __DIR__ . '/../_lib/bootstrap.php';
 
 metodo(['POST']);
 exigir_login();

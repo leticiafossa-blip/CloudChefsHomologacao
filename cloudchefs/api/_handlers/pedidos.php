@@ -7,7 +7,7 @@
  *         O preço e o total são calculados AQUI, com os valores do banco.
  *   PATCH /api/pedidos.php   -> muda o status { id_pedido, status }
  */
-require __DIR__ . '/_lib/bootstrap.php';
+require __DIR__ . '/../_lib/bootstrap.php';
 
 $metodo = metodo(['GET', 'POST', 'PATCH']);
 $usuario = exigir_login();
