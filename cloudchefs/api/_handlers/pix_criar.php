@@ -6,7 +6,7 @@
  * Se o Mercado Pago ainda não foi configurado, responde em MODO DEMONSTRAÇÃO:
  * nenhuma cobrança real é criada e a tela oferece um botão para simular o pagamento.
  */
-require __DIR__ . '/_lib/bootstrap.php';
+require __DIR__ . '/../_lib/bootstrap.php';
 
 metodo(['POST']);
 exigir_login();

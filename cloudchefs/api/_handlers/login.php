@@ -1,6 +1,6 @@
 <?php
 // POST /api/login.php  { login, senha }
-require __DIR__ . '/_lib/bootstrap.php';
+require __DIR__ . '/../_lib/bootstrap.php';
 
 metodo(['POST']);
 $dados = entrada();

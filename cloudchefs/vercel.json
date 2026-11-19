@@ -14,6 +14,7 @@
     { "source": "/mercado_pago_config.html", "destination": "/mercado_pago.html", "permanent": false }
   ],
   "rewrites": [
+    { "source": "/api/:ep([a-z_]+)\\.php", "destination": "/api/index.php?_ep=:ep" },
     { "source": "/", "destination": "/frontend/login.html" },
     { "source": "/:caminho((?!api/).*)", "destination": "/frontend/:caminho" }
   ],

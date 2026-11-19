@@ -10,9 +10,9 @@
 $caminho = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 // /api/arquivo.php -> roda o PHP
-if (preg_match('#^/api/([a-z_]+\.php)$#', $caminho, $m) && is_file(__DIR__ . '/api/' . $m[1])) {
-    $_SERVER['SCRIPT_NAME'] = $caminho;
-    require __DIR__ . '/api/' . $m[1];
+if (preg_match('#^/api/([a-z_]+)\.php$#', $caminho, $m)) {
+    $_GET['_ep'] = $m[1];
+    require __DIR__ . '/api/index.php';
     return true;
 }
 if (str_starts_with($caminho, '/api/')) {

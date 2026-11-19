@@ -6,7 +6,7 @@
  *                               Campos sensíveis em branco mantêm o valor atual.
  *   DELETE /api/mp_config.php -> desativa (volta ao modo demonstração)
  */
-require __DIR__ . '/_lib/bootstrap.php';
+require __DIR__ . '/../_lib/bootstrap.php';
 
 $metodo = metodo(['GET', 'POST', 'DELETE']);
 exigir_gerente();

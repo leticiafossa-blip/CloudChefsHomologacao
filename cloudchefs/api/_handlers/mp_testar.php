@@ -1,6 +1,6 @@
 <?php
 // GET /api/mp_testar.php  -> confere se o Access Token salvo funciona (somente gerente)
-require __DIR__ . '/_lib/bootstrap.php';
+require __DIR__ . '/../_lib/bootstrap.php';
 
 metodo(['GET']);
 exigir_gerente();

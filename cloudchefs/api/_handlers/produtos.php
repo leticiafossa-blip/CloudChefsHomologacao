@@ -7,7 +7,7 @@
  *   POST   /api/produtos.php            -> cadastra (gerente)
  *   PUT    /api/produtos.php            -> altera (gerente)
  */
-require __DIR__ . '/_lib/bootstrap.php';
+require __DIR__ . '/../_lib/bootstrap.php';
 
 $metodo = metodo(['GET', 'POST', 'PUT']);
 $db = db();
